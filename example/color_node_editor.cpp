@@ -1,4 +1,7 @@
 #include "node_editor.h"
+#include "node.h"
+#include "graph.h"
+#include "uinode.h"
 #include <imnodes.h>
 #include <imgui.h>
 
@@ -12,187 +15,10 @@
 #include <unordered_map>
 #include <span>
 #include <stack>
+#include <memory>
 
 namespace example
 {
-template<typename NodeType>
-class Graph
-{
-    int current_id_ = 0;
-    // These contains map to the node id
-    std::unordered_map<int, NodeType> nodes_;
-    std::unordered_map<int, std::vector<int>> node_neighbors_;
-
-public:
-    struct Edge
-    {
-        int id;
-        int from, to;
-
-        Edge() = default;
-        Edge(const int id, const int f, const int t) : id(id), from(f), to(t) {}
-
-        inline int opposite(const int n) const { return n == from ? to : from; }
-        inline bool contains(const int n) const { return n == from || n == to; }
-    };
-
-    // This container maps to the edge id
-    std::unordered_map<int, Edge> edges_;
-
-    // Element access
-
-    NodeType& node(const int id)
-    {
-        return const_cast<NodeType&>(static_cast<const Graph*>(this)->node(id));
-    }
-    const NodeType& node(const int id) const
-    {
-        const auto iter = nodes_.find(id);
-        assert(iter != nodes_.end());
-        return iter->second;
-    }
-
-    std::span<const int> neighbors(int node_id) const
-    {
-        const auto iter = node_neighbors_.find(node_id);
-        assert(iter != node_neighbors_.end());
-        return iter->second;
-    }
-
-    // Capacity
-
-    size_t num_edges_from_node(const int id) const
-    {
-        auto iter = node_neighbors_.find(id);
-        assert(iter != node_neighbors_.end());
-        return iter->second.size();
-    }
-
-    // Modifiers
-
-    int insert_node(const NodeType& node)
-    {
-        const int id = current_id_++;
-        assert(!nodes_.contains(id));
-        nodes_.insert(std::make_pair(id, node));
-        // edges_from_node_.insert(std::make_pair(id, 0));
-        node_neighbors_.insert(std::make_pair(id, std::vector<int>()));
-        return id;
-    }
-
-    void erase_node(const int id)
-    {
-        // first, remove any potential dangling edges
-        {
-            static std::vector<int> edges_to_erase;
-
-            for (auto& [_, edge] : edges_)
-            {
-                if (edge.contains(id))
-                {
-                    edges_to_erase.push_back(edge.id);
-                }
-            }
-
-            for (const int edge_id : edges_to_erase)
-            {
-                erase_edge(edge_id);
-            }
-
-            edges_to_erase.clear();
-        }
-
-        nodes_.erase(id);
-        // edges_from_node_.erase(id);
-        node_neighbors_.erase(id);
-    }
-
-    int insert_edge(const int from, const int to)
-    {
-        const int id = current_id_++;
-        assert(edges_.find(id) == edges_.end());
-        assert(nodes_.find(from) != nodes_.end());
-        assert(nodes_.find(to) != nodes_.end());
-        edges_.insert(std::make_pair(id, Edge(id, from, to)));
-
-        // update neighbor count
-        // assert(edges_from_node_.find(from) != edges_from_node_.end());
-        // edges_from_node_.find(from)->second += 1;
-        // update neighbor list
-        assert(node_neighbors_.find(from) != node_neighbors_.end());
-        node_neighbors_.find(from)->second.push_back(to);
-
-        return id;
-    }
-
-    void erase_edge(const int edge_id)
-    {
-        // This is a bit lazy, we find the pointer here, but we refind it when we erase the edge
-        // based on id key.
-        assert(edges_.find(edge_id) != edges_.end());
-        const Edge& edge = edges_.find(edge_id)->second;
-
-        // update neighbor count
-        // assert(edges_from_node_.find(edge.from) != edges_from_node_.end());
-        // int& edge_count = edges_from_node_.find(edge.from)->second;
-        // assert(edge_count > 0);
-        // edge_count -= 1;
-
-        // update neighbor list
-        {
-            assert(node_neighbors_.find(edge.from) != node_neighbors_.end());
-            std::vector<int>& neighbors = node_neighbors_.find(edge.from)->second;
-            auto iter = std::find(neighbors.begin(), neighbors.end(), edge.to);
-            assert(iter != neighbors.end());
-            neighbors.erase(iter);
-        }
-
-        edges_.erase(edge_id);
-    }
-};
-
-template<typename NodeType, typename Visitor>
-void dfs_traverse(const Graph<NodeType>& graph, const int start_node, Visitor visitor)
-{
-    std::stack<int> stack;
-
-    stack.push(start_node);
-
-    while (!stack.empty())
-    {
-        const int current_node = stack.top();
-        stack.pop();
-
-        visitor(current_node);
-
-        for (const int neighbor : graph.neighbors(current_node))
-        {
-            stack.push(neighbor);
-        }
-    }
-}
-
-namespace
-{
-enum class NodeType
-{
-    add,
-    multiply,
-    output,
-    sine,
-    time,
-    value
-};
-
-struct Node
-{
-    NodeType type;
-    float value;
-
-    explicit Node(const NodeType t) : type(t), value(0.f) {}
-
-    Node(const NodeType t, const float v) : type(t), value(v) {}
-};
 
 template<class T>
 T clamp(T x, T a, T b)
@@ -280,50 +106,9 @@ ImU32 evaluate(const Graph<Node>& graph, const int root_node)
 class ColorNodeEditor
 {
 public:
-    enum class UiNodeType
-    {
-        add,
-        multiply,
-        output,
-        sine,
-        time,
-    };
-
-    struct UiNode
-    {
-        UiNodeType type;
-        // The identifying id of the ui node. For add, multiply, sine, and time
-        // this is the "operation" node id. The additional input nodes are
-        // stored in the structs.
-        int id;
-
-        union
-        {
-            struct
-            {
-                int lhs, rhs;
-            } add;
-
-            struct
-            {
-                int lhs, rhs;
-            } multiply;
-
-            struct
-            {
-                int r, g, b;
-            } output;
-
-            struct
-            {
-                int input;
-            } sine;
-        };
-    };
-
     Graph<Node> graph_;
-    std::vector<UiNode> nodes_;
-    int root_node_id_;
+    std::vector<std::shared_ptr<UiNode>> nodes_;
+    int root_node_id_ = -1;
 
     void show()
     {
@@ -343,233 +128,9 @@ public:
 
         imnodes::BeginNodeEditor();
 
-        for (const UiNode& node : nodes_)
+        for (const auto& node : nodes_)
         {
-            switch (node.type)
-            {
-            case UiNodeType::add:
-            {
-                const float node_width = 100.f;
-                imnodes::BeginNode(node.id);
-
-                imnodes::BeginNodeTitleBar();
-                ImGui::TextUnformatted("add");
-                imnodes::EndNodeTitleBar();
-                {
-                    imnodes::BeginInputAttribute(node.add.lhs);
-                    const float label_width = ImGui::CalcTextSize("left").x;
-                    ImGui::TextUnformatted("left");
-                    if (graph_.num_edges_from_node(node.add.lhs) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat("##hidelabel", &graph_.node(node.add.lhs).value, 0.01f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                {
-                    imnodes::BeginInputAttribute(node.add.rhs);
-                    const float label_width = ImGui::CalcTextSize("right").x;
-                    ImGui::TextUnformatted("right");
-                    if (graph_.num_edges_from_node(node.add.rhs) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat("##hidelabel", &graph_.node(node.add.rhs).value, 0.01f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                ImGui::Spacing();
-
-                {
-                    imnodes::BeginOutputAttribute(node.id);
-                    const float label_width = ImGui::CalcTextSize("result").x;
-                    ImGui::Indent(node_width - label_width);
-                    ImGui::TextUnformatted("result");
-                    imnodes::EndOutputAttribute();
-                }
-
-                imnodes::EndNode();
-            }
-            break;
-            case UiNodeType::multiply:
-            {
-                const float node_width = 100.0f;
-                imnodes::BeginNode(node.id);
-
-                imnodes::BeginNodeTitleBar();
-                ImGui::TextUnformatted("multiply");
-                imnodes::EndNodeTitleBar();
-
-                {
-                    imnodes::BeginInputAttribute(node.multiply.lhs);
-                    const float label_width = ImGui::CalcTextSize("left").x;
-                    ImGui::TextUnformatted("left");
-                    if (graph_.num_edges_from_node(node.multiply.lhs) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.multiply.lhs).value, 0.01f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                {
-                    imnodes::BeginInputAttribute(node.multiply.rhs);
-                    const float label_width = ImGui::CalcTextSize("right").x;
-                    ImGui::TextUnformatted("right");
-                    if (graph_.num_edges_from_node(node.multiply.rhs) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.multiply.rhs).value, 0.01f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                ImGui::Spacing();
-
-                {
-                    imnodes::BeginOutputAttribute(node.id);
-                    const float label_width = ImGui::CalcTextSize("result").x;
-                    ImGui::Indent(node_width - label_width);
-                    ImGui::TextUnformatted("result");
-                    imnodes::EndOutputAttribute();
-                }
-
-                imnodes::EndNode();
-            }
-            break;
-            case UiNodeType::output:
-            {
-                const float node_width = 100.0f;
-                imnodes::PushColorStyle(imnodes::ColorStyle_TitleBar, IM_COL32(11, 109, 191, 255));
-                imnodes::PushColorStyle(
-                    imnodes::ColorStyle_TitleBarHovered, IM_COL32(45, 126, 194, 255));
-                imnodes::PushColorStyle(
-                    imnodes::ColorStyle_TitleBarSelected, IM_COL32(81, 148, 204, 255));
-                imnodes::BeginNode(node.id);
-
-                imnodes::BeginNodeTitleBar();
-                ImGui::TextUnformatted("output");
-                imnodes::EndNodeTitleBar();
-
-                ImGui::Dummy(ImVec2(node_width, 0.f));
-                {
-                    imnodes::BeginInputAttribute(node.output.r);
-                    const float label_width = ImGui::CalcTextSize("r").x;
-                    ImGui::TextUnformatted("r");
-                    if (graph_.num_edges_from_node(node.output.r) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.output.r).value, 0.01f, 0.f, 1.0f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                ImGui::Spacing();
-
-                {
-                    imnodes::BeginInputAttribute(node.output.g);
-                    const float label_width = ImGui::CalcTextSize("g").x;
-                    ImGui::TextUnformatted("g");
-                    if (graph_.num_edges_from_node(node.output.g) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.output.g).value, 0.01f, 0.f, 1.f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                ImGui::Spacing();
-
-                {
-                    imnodes::BeginInputAttribute(node.output.b);
-                    const float label_width = ImGui::CalcTextSize("b").x;
-                    ImGui::TextUnformatted("b");
-                    if (graph_.num_edges_from_node(node.output.b) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.output.b).value, 0.01f, 0.f, 1.0f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-                imnodes::EndNode();
-                imnodes::PopColorStyle();
-                imnodes::PopColorStyle();
-                imnodes::PopColorStyle();
-            }
-            break;
-            case UiNodeType::sine:
-            {
-                const float node_width = 100.0f;
-                imnodes::BeginNode(node.id);
-
-                imnodes::BeginNodeTitleBar();
-                ImGui::TextUnformatted("sine");
-                imnodes::EndNodeTitleBar();
-
-                {
-                    imnodes::BeginInputAttribute(node.sine.input);
-                    const float label_width = ImGui::CalcTextSize("number").x;
-                    ImGui::TextUnformatted("number");
-                    if (graph_.num_edges_from_node(node.sine.input) == 0ull)
-                    {
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(node_width - label_width);
-                        ImGui::DragFloat(
-                            "##hidelabel", &graph_.node(node.sine.input).value, 0.01f, 0.f, 1.0f);
-                        ImGui::PopItemWidth();
-                    }
-                    imnodes::EndInputAttribute();
-                }
-
-                ImGui::Spacing();
-
-                {
-                    imnodes::BeginOutputAttribute(node.id);
-                    const float label_width = ImGui::CalcTextSize("output").x;
-                    ImGui::Indent(node_width - label_width);
-                    ImGui::TextUnformatted("output");
-                    imnodes::EndInputAttribute();
-                }
-
-                imnodes::EndNode();
-            }
-            break;
-            case UiNodeType::time:
-            {
-                imnodes::BeginNode(node.id);
-
-                imnodes::BeginNodeTitleBar();
-                ImGui::TextUnformatted("time");
-                imnodes::EndNodeTitleBar();
-
-                imnodes::BeginOutputAttribute(node.id);
-                ImGui::Text("output");
-                imnodes::EndOutputAttribute();
-
-                imnodes::EndNode();
-            }
-            break;
-            }
+            node->show(graph_);
         }
 
         for (const auto& [_, edge] : graph_.edges_)
@@ -644,35 +205,16 @@ public:
                 imnodes::GetSelectedNodes(selected_nodes.data());
                 for (const int node_id : selected_nodes)
                 {
-                    graph_.erase_node(node_id);
                     auto iter = std::find_if(
-                        nodes_.begin(), nodes_.end(), [node_id](const UiNode& node) -> bool {
-                            return node.id == node_id;
+                        nodes_.begin(), nodes_.end(), [node_id](const auto& node) -> bool {
+                            return node->id == node_id;
                         });
-                    // Erase any additional internal nodes
-                    switch (iter->type)
-                    {
-                    case UiNodeType::add:
-                        graph_.erase_node(iter->add.lhs);
-                        graph_.erase_node(iter->add.rhs);
-                        break;
-                    case UiNodeType::multiply:
-                        graph_.erase_node(iter->multiply.lhs);
-                        graph_.erase_node(iter->multiply.rhs);
-                        break;
-                    case UiNodeType::output:
-                        graph_.erase_node(iter->output.r);
-                        graph_.erase_node(iter->output.g);
-                        graph_.erase_node(iter->output.b);
-                        root_node_id_ = -1;
-                        break;
-                    case UiNodeType::sine:
-                        graph_.erase_node(iter->sine.input);
-                        break;
-                    default:
-                        break;
-                    }
                     nodes_.erase(iter);
+                    // Erase any additional internal nodes
+                    if ((*iter)->erase(graph_))
+                    {
+                        root_node_id_ = -1;
+                    }
                 }
             }
         }
@@ -689,85 +231,38 @@ public:
 
             if (ImGui::MenuItem("add"))
             {
-                const Node value(NodeType::value, 0.f);
-                const Node op(NodeType::add);
-
-                UiNode ui_node;
-                ui_node.type = UiNodeType::add;
-                ui_node.add.lhs = graph_.insert_node(value);
-                ui_node.add.rhs = graph_.insert_node(value);
-                ui_node.id = graph_.insert_node(op);
-
-                graph_.insert_edge(ui_node.id, ui_node.add.lhs);
-                graph_.insert_edge(ui_node.id, ui_node.add.rhs);
-
+                auto ui_node = UiNode::CreateAdd(graph_);
                 nodes_.push_back(ui_node);
-                imnodes::SetNodeScreenSpacePos(ui_node.id, click_pos);
+                imnodes::SetNodeScreenSpacePos(ui_node->id, click_pos);
             }
 
             if (ImGui::MenuItem("multiply"))
             {
-                const Node value(NodeType::value, 0.f);
-                const Node op(NodeType::multiply);
-
-                UiNode ui_node;
-                ui_node.type = UiNodeType::multiply;
-                ui_node.multiply.lhs = graph_.insert_node(value);
-                ui_node.multiply.rhs = graph_.insert_node(value);
-                ui_node.id = graph_.insert_node(op);
-
-                graph_.insert_edge(ui_node.id, ui_node.multiply.lhs);
-                graph_.insert_edge(ui_node.id, ui_node.multiply.rhs);
-
+                auto ui_node = UiNode::CreateMultiply(graph_);
                 nodes_.push_back(ui_node);
-                imnodes::SetNodeScreenSpacePos(ui_node.id, click_pos);
+                imnodes::SetNodeScreenSpacePos(ui_node->id, click_pos);
             }
 
             if (ImGui::MenuItem("output") && root_node_id_ == -1)
             {
-                const Node value(NodeType::value, 0.f);
-                const Node out(NodeType::output);
-
-                UiNode ui_node;
-                ui_node.type = UiNodeType::output;
-                ui_node.output.r = graph_.insert_node(value);
-                ui_node.output.g = graph_.insert_node(value);
-                ui_node.output.b = graph_.insert_node(value);
-                ui_node.id = graph_.insert_node(out);
-
-                graph_.insert_edge(ui_node.id, ui_node.output.r);
-                graph_.insert_edge(ui_node.id, ui_node.output.g);
-                graph_.insert_edge(ui_node.id, ui_node.output.b);
-
+                auto ui_node = UiNode::CreateOutput(graph_);
                 nodes_.push_back(ui_node);
-                imnodes::SetNodeScreenSpacePos(ui_node.id, click_pos);
-                root_node_id_ = ui_node.id;
+                imnodes::SetNodeScreenSpacePos(ui_node->id, click_pos);
+                root_node_id_ = ui_node->id;
             }
 
             if (ImGui::MenuItem("sine"))
             {
-                const Node value(NodeType::value, 0.f);
-                const Node op(NodeType::sine);
-
-                UiNode ui_node;
-                ui_node.type = UiNodeType::sine;
-                ui_node.sine.input = graph_.insert_node(value);
-                ui_node.id = graph_.insert_node(op);
-
-                graph_.insert_edge(ui_node.id, ui_node.sine.input);
-
+                auto ui_node = UiNode::CreateSine(graph_);
                 nodes_.push_back(ui_node);
-                imnodes::SetNodeScreenSpacePos(ui_node.id, click_pos);
+                imnodes::SetNodeScreenSpacePos(ui_node->id, click_pos);
             }
 
             if (ImGui::MenuItem("time"))
             {
-                UiNode ui_node;
-                ui_node.type = UiNodeType::time;
-                ui_node.id = graph_.insert_node(Node(NodeType::time));
-
+                auto ui_node = UiNode::CreateTime(graph_);
                 nodes_.push_back(ui_node);
-                imnodes::SetNodeScreenSpacePos(ui_node.id, click_pos);
+                imnodes::SetNodeScreenSpacePos(ui_node->id, click_pos);
             }
 
             ImGui::EndPopup();
@@ -787,7 +282,6 @@ public:
 };
 
 static ColorNodeEditor color_editor;
-} // namespace
 
 void NodeEditorInitialize()
 {
