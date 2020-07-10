@@ -21,7 +21,6 @@ class Graph
     int current_id_ = 0;
     // These contains map to the node id
     std::unordered_map<int, NodeType> nodes_;
-    std::unordered_map<int, int> edges_from_node_;
     std::unordered_map<int, std::vector<int>> node_neighbors_;
 
 public:
@@ -64,9 +63,9 @@ public:
 
     size_t num_edges_from_node(const int id) const
     {
-        auto iter = edges_from_node_.find(id);
-        assert(iter != edges_from_node_.end());
-        return iter->second;
+        auto iter = node_neighbors_.find(id);
+        assert(iter != node_neighbors_.end());
+        return iter->second.size();
     }
 
     // Modifiers
@@ -76,7 +75,7 @@ public:
         const int id = current_id_++;
         assert(!nodes_.contains(id));
         nodes_.insert(std::make_pair(id, node));
-        edges_from_node_.insert(std::make_pair(id, 0));
+        // edges_from_node_.insert(std::make_pair(id, 0));
         node_neighbors_.insert(std::make_pair(id, std::vector<int>()));
         return id;
     }
@@ -104,7 +103,7 @@ public:
         }
 
         nodes_.erase(id);
-        edges_from_node_.erase(id);
+        // edges_from_node_.erase(id);
         node_neighbors_.erase(id);
     }
 
@@ -117,8 +116,8 @@ public:
         edges_.insert(std::make_pair(id, Edge(id, from, to)));
 
         // update neighbor count
-        assert(edges_from_node_.find(from) != edges_from_node_.end());
-        edges_from_node_.find(from)->second += 1;
+        // assert(edges_from_node_.find(from) != edges_from_node_.end());
+        // edges_from_node_.find(from)->second += 1;
         // update neighbor list
         assert(node_neighbors_.find(from) != node_neighbors_.end());
         node_neighbors_.find(from)->second.push_back(to);
@@ -134,10 +133,10 @@ public:
         const Edge& edge = edges_.find(edge_id)->second;
 
         // update neighbor count
-        assert(edges_from_node_.find(edge.from) != edges_from_node_.end());
-        int& edge_count = edges_from_node_.find(edge.from)->second;
-        assert(edge_count > 0);
-        edge_count -= 1;
+        // assert(edges_from_node_.find(edge.from) != edges_from_node_.end());
+        // int& edge_count = edges_from_node_.find(edge.from)->second;
+        // assert(edge_count > 0);
+        // edge_count -= 1;
 
         // update neighbor list
         {
