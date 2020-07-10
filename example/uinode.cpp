@@ -31,11 +31,11 @@ struct AddNode : public UiNode
             imnodes::BeginInputAttribute(lhs);
             const float label_width = ImGui::CalcTextSize("left").x;
             ImGui::TextUnformatted("left");
-            if (graph_.num_edges_from_node(lhs) == 0ull)
+            if (graph_.node(lhs).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(lhs).value, 0.01f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(lhs).payload.value, 0.01f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -45,11 +45,11 @@ struct AddNode : public UiNode
             imnodes::BeginInputAttribute(rhs);
             const float label_width = ImGui::CalcTextSize("right").x;
             ImGui::TextUnformatted("right");
-            if (graph_.num_edges_from_node(rhs) == 0ull)
+            if (graph_.node(rhs).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(rhs).value, 0.01f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(rhs).payload.value, 0.01f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -94,11 +94,11 @@ struct MultiplyNode : public UiNode
             imnodes::BeginInputAttribute(lhs);
             const float label_width = ImGui::CalcTextSize("left").x;
             ImGui::TextUnformatted("left");
-            if (graph_.num_edges_from_node(lhs) == 0ull)
+            if (graph_.node(lhs).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(lhs).value, 0.01f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(lhs).payload.value, 0.01f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -108,11 +108,11 @@ struct MultiplyNode : public UiNode
             imnodes::BeginInputAttribute(rhs);
             const float label_width = ImGui::CalcTextSize("right").x;
             ImGui::TextUnformatted("right");
-            if (graph_.num_edges_from_node(rhs) == 0ull)
+            if (graph_.node(rhs).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(rhs).value, 0.01f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(rhs).payload.value, 0.01f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -161,11 +161,11 @@ struct OutputNode : public UiNode
             imnodes::BeginInputAttribute(r);
             const float label_width = ImGui::CalcTextSize("r").x;
             ImGui::TextUnformatted("r");
-            if (graph_.num_edges_from_node(r) == 0ull)
+            if (graph_.node(r).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(r).value, 0.01f, 0.f, 1.0f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(r).payload.value, 0.01f, 0.f, 1.0f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -177,11 +177,11 @@ struct OutputNode : public UiNode
             imnodes::BeginInputAttribute(g);
             const float label_width = ImGui::CalcTextSize("g").x;
             ImGui::TextUnformatted("g");
-            if (graph_.num_edges_from_node(g) == 0ull)
+            if (graph_.node(g).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(g).value, 0.01f, 0.f, 1.f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(g).payload.value, 0.01f, 0.f, 1.f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -193,11 +193,11 @@ struct OutputNode : public UiNode
             imnodes::BeginInputAttribute(b);
             const float label_width = ImGui::CalcTextSize("b").x;
             ImGui::TextUnformatted("b");
-            if (graph_.num_edges_from_node(b) == 0ull)
+            if (graph_.node(b).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(b).value, 0.01f, 0.f, 1.0f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(b).payload.value, 0.01f, 0.f, 1.0f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();
@@ -234,11 +234,11 @@ struct SineNode : public UiNode
             imnodes::BeginInputAttribute(input);
             const float label_width = ImGui::CalcTextSize("number").x;
             ImGui::TextUnformatted("number");
-            if (graph_.num_edges_from_node(input) == 0ull)
+            if (graph_.node(input).neighbors.size() == 0ull)
             {
                 ImGui::SameLine();
                 ImGui::PushItemWidth(node_width - label_width);
-                ImGui::DragFloat("##hidelabel", &graph_.node(input).value, 0.01f, 0.f, 1.0f);
+                ImGui::DragFloat("##hidelabel", &graph_.node(input).payload.value, 0.01f, 0.f, 1.0f);
                 ImGui::PopItemWidth();
             }
             imnodes::EndInputAttribute();

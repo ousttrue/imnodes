@@ -14,13 +14,33 @@ namespace example
 {
 
 // a very simple directional graph
-template<typename NodeValue>
+template<typename NodePayload>
 class Graph
 {
     int current_id_ = 0;
+
+public:
     // These contains map to the node id
-    std::unordered_map<int, NodeValue> nodes_;
-    std::unordered_map<int, std::vector<int>> node_neighbors_;
+    struct Node
+    {
+        NodePayload payload;
+        Node(const NodePayload &payload)
+        : payload(payload)
+        {           
+        }
+        
+        std::vector<int> neighbors;
+
+        void erase_edge(int to_node)
+        {
+            auto iter = std::find(neighbors.begin(), neighbors.end(), to_node);
+            assert(iter != neighbors.end());
+            neighbors.erase(iter);
+        }
+    };
+
+private:
+    std::unordered_map<int, Node> nodes_;
 
 public:
     struct Edge
@@ -40,52 +60,35 @@ public:
 
     // Element access
 
-    NodeValue& node(const int id)
+    Node& node(const int id)
     {
-        return const_cast<NodeValue&>(static_cast<const Graph*>(this)->node(id));
+        return const_cast<Node&>(static_cast<const Graph*>(this)->node(id));
     }
-    const NodeValue& node(const int id) const
+
+    const Node& node(const int id) const
     {
         const auto iter = nodes_.find(id);
         assert(iter != nodes_.end());
         return iter->second;
     }
 
-    std::span<const int> neighbors(int node_id) const
-    {
-        const auto iter = node_neighbors_.find(node_id);
-        assert(iter != node_neighbors_.end());
-        return iter->second;
-    }
-
-    // Capacity
-
-    size_t num_edges_from_node(const int id) const
-    {
-        auto iter = node_neighbors_.find(id);
-        assert(iter != node_neighbors_.end());
-        return iter->second.size();
-    }
-
     // Modifiers
 
-    int insert_node(const NodeValue& node)
+    int insert_node(const NodePayload& node)
     {
         const int id = current_id_++;
         assert(!nodes_.contains(id));
-        nodes_.insert(std::make_pair(id, node));
-        node_neighbors_.insert(std::make_pair(id, std::vector<int>()));
+        nodes_.insert(std::make_pair(id, Node(node)));
         return id;
     }
 
     void erase_node(const int id)
     {
-
         // first, remove any potential dangling edges
         {
             static std::vector<int> edges_to_erase;
 
-            for (auto &[_, edge] : edges_)
+            for (auto& [_, edge] : edges_)
             {
                 if (edge.contains(id))
                 {
@@ -102,7 +105,6 @@ public:
         }
 
         nodes_.erase(id);
-        node_neighbors_.erase(id);
     }
 
     int insert_edge(const int from, const int to)
@@ -114,8 +116,8 @@ public:
         edges_.insert(std::make_pair(id, Edge(id, from, to)));
 
         // update neighbor list
-        assert(node_neighbors_.find(from) != node_neighbors_.end());
-        node_neighbors_.find(from)->second.push_back(to);
+        assert(nodes_.find(from) != nodes_.end());
+        nodes_.find(from)->second.neighbors.push_back(to);
 
         return id;
     }
@@ -129,19 +131,17 @@ public:
 
         // update neighbor list
         {
-            assert(node_neighbors_.find(edge.from) != node_neighbors_.end());
-            std::vector<int>& neighbors = node_neighbors_.find(edge.from)->second;
-            auto iter = std::find(neighbors.begin(), neighbors.end(), edge.to);
-            assert(iter != neighbors.end());
-            neighbors.erase(iter);
+            assert(nodes_.find(edge.from) != nodes_.end());
+            auto& node = nodes_.find(edge.from)->second;
+            node.erase_edge(edge.to);
         }
 
         edges_.erase(edge_id);
     }
 };
 
-template<typename NodeValue, typename Visitor>
-void dfs_traverse(const Graph<NodeValue>& graph, const int start_node, Visitor visitor)
+template<typename NodePayload, typename Visitor>
+void dfs_traverse(const Graph<NodePayload>& graph, const int start_node, Visitor visitor)
 {
     std::stack<int> stack;
 
@@ -154,7 +154,8 @@ void dfs_traverse(const Graph<NodeValue>& graph, const int start_node, Visitor v
 
         visitor(current_node);
 
-        for (const int neighbor : graph.neighbors(current_node))
+        auto& node = graph.node(current_node);
+        for (auto neighbor : node.neighbors)
         {
             stack.push(neighbor);
         }

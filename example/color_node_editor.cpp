@@ -39,7 +39,7 @@ ImU32 evaluate(const Graph<Node>& graph, const int root_node)
     {
         const int id = postorder.top();
         postorder.pop();
-        const Node node = graph.node(id);
+        auto &node = graph.node(id).payload;
 
         switch (node.type)
         {
@@ -79,7 +79,7 @@ ImU32 evaluate(const Graph<Node>& graph, const int root_node)
             // If the edge does not have an edge connecting to another node, then just use the value
             // at this node. It means the node's input pin has not been connected to anything and
             // the value comes from the node's UI.
-            if (graph.num_edges_from_node(id) == 0ull)
+            if (graph.node(id).neighbors.size() == 0ull)
             {
                 value_stack.push(node.value);
             }
@@ -138,7 +138,7 @@ public:
             // If edge doesn't start at value, then it's an internal edge, i.e.
             // an edge which links a node's operation to its input. We don't
             // want to render node internals with visible links.
-            if (graph_.node(edge.from).type != NodeType::value)
+            if (graph_.node(edge.from).payload.type != NodeType::value)
                 continue;
 
             imnodes::Link(edge.id, edge.from, edge.to);
@@ -155,8 +155,8 @@ public:
             int start_attr, end_attr;
             if (imnodes::IsLinkCreated(&start_attr, &end_attr))
             {
-                const NodeType start_type = graph_.node(start_attr).type;
-                const NodeType end_type = graph_.node(end_attr).type;
+                const NodeType start_type = graph_.node(start_attr).payload.type;
+                const NodeType end_type = graph_.node(end_attr).payload.type;
 
                 const bool valid_link = start_type != end_type;
                 if (valid_link)
