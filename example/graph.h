@@ -4,173 +4,26 @@
 #include <cassert>
 #include <iterator>
 #include <stack>
+#include <unordered_map>
 #include <stddef.h>
 #include <utility>
 #include <vector>
+#include <span>
 
 namespace example
 {
-template<typename ElementType>
-struct Span
-{
-    using iterator = ElementType*;
-
-    template<typename Container>
-    Span(Container& c) : begin_(c.data()), end_(begin_ + c.size())
-    {
-    }
-
-    iterator begin() const { return begin_; }
-    iterator end() const { return end_; }
-
-private:
-    iterator begin_;
-    iterator end_;
-};
-
-template<typename ElementType>
-class IdMap
-{
-public:
-    using iterator = typename std::vector<ElementType>::iterator;
-    using const_iterator = typename std::vector<ElementType>::const_iterator;
-
-    // Iterators
-
-    const_iterator begin() const { return elements_.begin(); }
-    const_iterator end() const { return elements_.end(); }
-
-    // Element access
-
-    Span<const ElementType> elements() const { return elements_; }
-
-    // Capacity
-
-    bool empty() const { return sorted_ids_.empty(); }
-    size_t size() const { return sorted_ids_.size(); }
-
-    // Modifiers
-
-    std::pair<iterator, bool> insert(int id, const ElementType& element);
-    std::pair<iterator, bool> insert(int id, ElementType&& element);
-    size_t erase(int id);
-    void clear();
-
-    // Lookup
-
-    iterator find(int id);
-    const_iterator find(int id) const;
-    bool contains(int id) const;
-
-private:
-    std::vector<ElementType> elements_;
-    std::vector<int> sorted_ids_;
-};
-
-template<typename ElementType>
-std::pair<typename IdMap<ElementType>::iterator, bool> IdMap<ElementType>::insert(
-    const int id,
-    const ElementType& element)
-{
-    auto lower_bound = std::lower_bound(sorted_ids_.begin(), sorted_ids_.end(), id);
-
-    if (lower_bound != sorted_ids_.end() && id == *lower_bound)
-    {
-        return std::make_pair(
-            std::next(elements_.begin(), std::distance(sorted_ids_.begin(), lower_bound)), false);
-    }
-
-    auto insert_element_at =
-        std::next(elements_.begin(), std::distance(sorted_ids_.begin(), lower_bound));
-
-    sorted_ids_.insert(lower_bound, id);
-    return std::make_pair(elements_.insert(insert_element_at, element), true);
-}
-
-template<typename ElementType>
-std::pair<typename IdMap<ElementType>::iterator, bool> IdMap<ElementType>::insert(
-    const int id,
-    ElementType&& element)
-{
-    auto lower_bound = std::lower_bound(sorted_ids_.begin(), sorted_ids_.end(), id);
-
-    if (lower_bound != sorted_ids_.end() && id == *lower_bound)
-    {
-        return std::make_pair(
-            std::next(elements_.begin(), std::distance(sorted_ids_.begin(), lower_bound)), false);
-    }
-
-    auto insert_element_at =
-        std::next(elements_.begin(), std::distance(sorted_ids_.begin(), lower_bound));
-
-    sorted_ids_.insert(lower_bound, id);
-    return std::make_pair(elements_.insert(insert_element_at, std::move(element)), true);
-}
-
-template<typename ElementType>
-size_t IdMap<ElementType>::erase(const int id)
-{
-    auto lower_bound = std::lower_bound(sorted_ids_.begin(), sorted_ids_.end(), id);
-
-    if (lower_bound == sorted_ids_.end() || id != *lower_bound)
-    {
-        return 0ull;
-    }
-
-    auto erase_element_at =
-        std::next(elements_.begin(), std::distance(sorted_ids_.begin(), lower_bound));
-
-    sorted_ids_.erase(lower_bound);
-    elements_.erase(erase_element_at);
-
-    return 1ull;
-}
-
-template<typename ElementType>
-void IdMap<ElementType>::clear()
-{
-    elements_.clear();
-    sorted_ids_.clear();
-}
-
-template<typename ElementType>
-typename IdMap<ElementType>::iterator IdMap<ElementType>::find(const int id)
-{
-    const auto lower_bound = std::lower_bound(sorted_ids_.cbegin(), sorted_ids_.cend(), id);
-    return (lower_bound == sorted_ids_.cend() || *lower_bound != id)
-               ? elements_.end()
-               : std::next(elements_.begin(), std::distance(sorted_ids_.cbegin(), lower_bound));
-}
-
-template<typename ElementType>
-typename IdMap<ElementType>::const_iterator IdMap<ElementType>::find(const int id) const
-{
-    const auto lower_bound = std::lower_bound(sorted_ids_.cbegin(), sorted_ids_.cend(), id);
-    return (lower_bound == sorted_ids_.cend() || *lower_bound != id)
-               ? elements_.cend()
-               : std::next(elements_.cbegin(), std::distance(sorted_ids_.cbegin(), lower_bound));
-}
-
-template<typename ElementType>
-bool IdMap<ElementType>::contains(const int id) const
-{
-    const auto lower_bound = std::lower_bound(sorted_ids_.cbegin(), sorted_ids_.cend(), id);
-
-    if (lower_bound == sorted_ids_.cend())
-    {
-        return false;
-    }
-
-    return *lower_bound == id;
-}
 
 // a very simple directional graph
 template<typename NodeType>
 class Graph
 {
-public:
-    Graph() : current_id_(0), nodes_(), edges_from_node_(), node_neighbors_(), edges_() {}
+    int current_id_ = 0;
+    // These contains map to the node id
+    std::unordered_map<int, NodeType> nodes_;
+    std::unordered_map<int, int> edges_from_node_;
+    std::unordered_map<int, std::vector<int>> node_neighbors_;
 
+public:
     struct Edge
     {
         int id;
@@ -183,6 +36,9 @@ public:
         inline bool contains(const int n) const { return n == from || n == to; }
     };
 
+    // This container maps to the edge id
+    std::unordered_map<int, Edge> edges_;
+
     // Element access
 
     NodeType& node(const int id)
@@ -193,18 +49,14 @@ public:
     {
         const auto iter = nodes_.find(id);
         assert(iter != nodes_.end());
-        return *iter;
+        return iter->second;
     }
 
-    Span<const int> neighbors(int node_id) const
+    std::span<const int> neighbors(int node_id) const
     {
         const auto iter = node_neighbors_.find(node_id);
         assert(iter != node_neighbors_.end());
-        return *iter;
-    }
-    Span<const typename Edge> edges() const
-    {
-        return edges_.elements();
+        return iter->second;
     }
 
     // Capacity
@@ -213,7 +65,7 @@ public:
     {
         auto iter = edges_from_node_.find(id);
         assert(iter != edges_from_node_.end());
-        return *iter;
+        return iter->second;
     }
 
     // Modifiers
@@ -222,9 +74,9 @@ public:
     {
         const int id = current_id_++;
         assert(!nodes_.contains(id));
-        nodes_.insert(id, node);
-        edges_from_node_.insert(id, 0);
-        node_neighbors_.insert(id, std::vector<int>());
+        nodes_.insert(std::make_pair(id, node));
+        edges_from_node_.insert(std::make_pair(id, 0));
+        node_neighbors_.insert(std::make_pair(id, std::vector<int>()));
         return id;
     }
 
@@ -235,7 +87,7 @@ public:
         {
             static std::vector<int> edges_to_erase;
 
-            for (const Edge& edge : edges_.elements())
+            for (auto &[_, edge] : edges_)
             {
                 if (edge.contains(id))
                 {
@@ -259,17 +111,17 @@ public:
     int insert_edge(const int from, const int to)
     {
         const int id = current_id_++;
-        assert(!edges_.contains(id));
-        assert(nodes_.contains(from));
-        assert(nodes_.contains(to));
-        edges_.insert(id, Edge(id, from, to));
+        assert(edges_.find(id) == edges_.end());
+        assert(nodes_.find(from) != nodes_.end());
+        assert(nodes_.find(to) != nodes_.end());
+        edges_.insert(std::make_pair(id, Edge(id, from, to)));
 
         // update neighbor count
-        assert(edges_from_node_.contains(from));
-        *edges_from_node_.find(from) += 1;
+        assert(edges_from_node_.find(from) != edges_from_node_.end());
+        edges_from_node_.find(from)->second += 1;
         // update neighbor list
-        assert(node_neighbors_.contains(from));
-        node_neighbors_.find(from)->push_back(to);
+        assert(node_neighbors_.find(from) != node_neighbors_.end());
+        node_neighbors_.find(from)->second.push_back(to);
 
         return id;
     }
@@ -278,36 +130,26 @@ public:
     {
         // This is a bit lazy, we find the pointer here, but we refind it when we erase the edge
         // based on id key.
-        assert(edges_.contains(edge_id));
-        const Edge& edge = *edges_.find(edge_id);
+        assert(edges_.find(edge_id) != edges_.end());
+        const Edge& edge = edges_.find(edge_id)->second;
 
         // update neighbor count
-        assert(edges_from_node_.contains(edge.from));
-        int& edge_count = *edges_from_node_.find(edge.from);
+        assert(edges_from_node_.find(edge.from) != edges_from_node_.end());
+        int& edge_count = edges_from_node_.find(edge.from)->second;
         assert(edge_count > 0);
         edge_count -= 1;
 
         // update neighbor list
         {
-            assert(node_neighbors_.contains(edge.from));
-            auto neighbors = node_neighbors_.find(edge.from);
-            auto iter = std::find(neighbors->begin(), neighbors->end(), edge.to);
-            assert(iter != neighbors->end());
-            neighbors->erase(iter);
+            assert(node_neighbors_.find(edge.from) != node_neighbors_.end());
+            std::vector<int>& neighbors = node_neighbors_.find(edge.from)->second;
+            auto iter = std::find(neighbors.begin(), neighbors.end(), edge.to);
+            assert(iter != neighbors.end());
+            neighbors.erase(iter);
         }
 
         edges_.erase(edge_id);
     }
-
-private:
-    int current_id_;
-    // These contains map to the node id
-    IdMap<NodeType> nodes_;
-    IdMap<int> edges_from_node_;
-    IdMap<std::vector<int>> node_neighbors_;
-
-    // This container maps to the edge id
-    IdMap<Edge> edges_;
 };
 
 template<typename NodeType, typename Visitor>

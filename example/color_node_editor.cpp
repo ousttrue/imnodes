@@ -371,7 +371,7 @@ public:
             }
         }
 
-        for (const auto& edge : graph_.edges())
+        for (const auto& [_, edge] : graph_.edges_)
         {
             // If edge doesn't start at value, then it's an internal edge, i.e.
             // an edge which links a node's operation to its input. We don't
