@@ -20,7 +20,6 @@ class Graph
     int current_id_ = 0;
     // These contains map to the node id
     std::unordered_map<int, NodeType> nodes_;
-    std::unordered_map<int, int> edges_from_node_;
     std::unordered_map<int, std::vector<int>> node_neighbors_;
 
 public:
