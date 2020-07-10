@@ -280,7 +280,50 @@ ImU32 evaluate(const Graph<Node>& graph, const int root_node)
 class ColorNodeEditor
 {
 public:
-    ColorNodeEditor() : graph_(), nodes_(), root_node_id_(-1) {}
+    enum class UiNodeType
+    {
+        add,
+        multiply,
+        output,
+        sine,
+        time,
+    };
+
+    struct UiNode
+    {
+        UiNodeType type;
+        // The identifying id of the ui node. For add, multiply, sine, and time
+        // this is the "operation" node id. The additional input nodes are
+        // stored in the structs.
+        int id;
+
+        union
+        {
+            struct
+            {
+                int lhs, rhs;
+            } add;
+
+            struct
+            {
+                int lhs, rhs;
+            } multiply;
+
+            struct
+            {
+                int r, g, b;
+            } output;
+
+            struct
+            {
+                int input;
+            } sine;
+        };
+    };
+
+    Graph<Node> graph_;
+    std::vector<UiNode> nodes_;
+    int root_node_id_;
 
     void show()
     {
@@ -741,52 +784,6 @@ public:
         ImGui::End();
         ImGui::PopStyleColor();
     }
-
-private:
-    enum class UiNodeType
-    {
-        add,
-        multiply,
-        output,
-        sine,
-        time,
-    };
-
-    struct UiNode
-    {
-        UiNodeType type;
-        // The identifying id of the ui node. For add, multiply, sine, and time
-        // this is the "operation" node id. The additional input nodes are
-        // stored in the structs.
-        int id;
-
-        union
-        {
-            struct
-            {
-                int lhs, rhs;
-            } add;
-
-            struct
-            {
-                int lhs, rhs;
-            } multiply;
-
-            struct
-            {
-                int r, g, b;
-            } output;
-
-            struct
-            {
-                int input;
-            } sine;
-        };
-    };
-
-    Graph<Node> graph_;
-    std::vector<UiNode> nodes_;
-    int root_node_id_;
 };
 
 static ColorNodeEditor color_editor;
