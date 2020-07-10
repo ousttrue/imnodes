@@ -14,12 +14,12 @@ namespace example
 {
 
 // a very simple directional graph
-template<typename NodeType>
+template<typename NodeValue>
 class Graph
 {
     int current_id_ = 0;
     // These contains map to the node id
-    std::unordered_map<int, NodeType> nodes_;
+    std::unordered_map<int, NodeValue> nodes_;
     std::unordered_map<int, std::vector<int>> node_neighbors_;
 
 public:
@@ -40,11 +40,11 @@ public:
 
     // Element access
 
-    NodeType& node(const int id)
+    NodeValue& node(const int id)
     {
-        return const_cast<NodeType&>(static_cast<const Graph*>(this)->node(id));
+        return const_cast<NodeValue&>(static_cast<const Graph*>(this)->node(id));
     }
-    const NodeType& node(const int id) const
+    const NodeValue& node(const int id) const
     {
         const auto iter = nodes_.find(id);
         assert(iter != nodes_.end());
@@ -69,7 +69,7 @@ public:
 
     // Modifiers
 
-    int insert_node(const NodeType& node)
+    int insert_node(const NodeValue& node)
     {
         const int id = current_id_++;
         assert(!nodes_.contains(id));
@@ -140,8 +140,8 @@ public:
     }
 };
 
-template<typename NodeType, typename Visitor>
-void dfs_traverse(const Graph<NodeType>& graph, const int start_node, Visitor visitor)
+template<typename NodeValue, typename Visitor>
+void dfs_traverse(const Graph<NodeValue>& graph, const int start_node, Visitor visitor)
 {
     std::stack<int> stack;
 
