@@ -912,6 +912,15 @@ bool finish_link_at_hovered_pin(EditorContext& editor, const OptionalIndex maybe
         return false;
     }
 
+    const int start_node_idx =
+        editor.pins.pool[editor.click_interaction_state.link_creation.start_pin_idx]
+            .parent_node_idx;
+    const int end_node_idx = editor.pins.pool[end_pin_idx].parent_node_idx;
+    if (start_node_idx == end_node_idx)
+    {
+        return false;
+    }
+
     editor.click_interaction_state.link_creation.end_pin_idx = end_pin_idx;
 
     return true;
