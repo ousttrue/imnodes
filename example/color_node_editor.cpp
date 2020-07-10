@@ -39,7 +39,7 @@ ImU32 evaluate(const Graph<Node>& graph, const int root_node)
     {
         const int id = postorder.top();
         postorder.pop();
-        auto &node = graph.node(id).payload;
+        auto& node = graph.node(id).payload;
 
         switch (node.type)
         {
@@ -115,17 +115,39 @@ public:
         // Update timer context
         current_time_seconds = 0.001f * SDL_GetTicks();
 
-        // The node editor window
-        ImGui::Begin("color node editor");
-        ImGui::TextUnformatted("Edit the color of the output color window using nodes.");
-        ImGui::Columns(2);
-        ImGui::TextUnformatted("A -- add node");
-        ImGui::TextUnformatted("X -- delete selected node or link");
-        ImGui::NextColumn();
-        ImGui::Checkbox(
-            "emulate three button mouse", &imnodes::GetIO().emulate_three_button_mouse.enabled);
-        ImGui::Columns(1);
+        {
+            // The node editor window
+            ImGui::Begin("color node editor");
+            ImGui::TextUnformatted("Edit the color of the output color window using nodes.");
+            ImGui::Columns(2);
+            ImGui::TextUnformatted("A -- add node");
+            ImGui::TextUnformatted("X -- delete selected node or link");
+            ImGui::NextColumn();
+            ImGui::Checkbox(
+                "emulate three button mouse", &imnodes::GetIO().emulate_three_button_mouse.enabled);
+            ImGui::Columns(1);
 
+            drawNodes();
+
+            ImGui::End();
+        }
+
+        {
+            // The color output window
+            ImU32 color = IM_COL32(255, 20, 147, 255);
+            if (root_node_id_ != -1)
+            {
+                color = evaluate(graph_, root_node_id_);
+            }
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
+            ImGui::Begin("output color");
+            ImGui::End();
+            ImGui::PopStyleColor();
+        }
+    }
+
+    void drawNodes()
+    {
         imnodes::BeginNodeEditor();
 
         for (const auto& node : nodes_)
@@ -219,6 +241,11 @@ public:
             }
         }
 
+        popup(open_popup);
+    }
+
+    void popup(bool open_popup)
+    {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
         if (!ImGui::IsAnyItemHovered() && open_popup)
         {
@@ -268,16 +295,6 @@ public:
             ImGui::EndPopup();
         }
         ImGui::PopStyleVar();
-        ImGui::End();
-
-        // The color output window
-
-        const ImU32 color =
-            root_node_id_ != -1 ? evaluate(graph_, root_node_id_) : IM_COL32(255, 20, 147, 255);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
-        ImGui::Begin("output color");
-        ImGui::End();
-        ImGui::PopStyleColor();
     }
 };
 
