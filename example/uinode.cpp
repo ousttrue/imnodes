@@ -21,6 +21,21 @@ struct AddNode : public UiNode
 
     using UiNode::UiNode;
 
+    static std::shared_ptr<AddNode> Create(Graph<Node>& graph_)
+    {
+        const Node value(NodeType::value, 0.f);
+        const Node op(NodeType::add);
+
+        auto ui_node = new AddNode(graph_.insert_node(op));
+        ui_node->lhs = graph_.insert_node(value);
+        ui_node->rhs = graph_.insert_node(value);
+
+        graph_.insert_edge(ui_node->id(), ui_node->lhs);
+        graph_.insert_edge(ui_node->id(), ui_node->rhs);
+
+        return std::shared_ptr<AddNode>(ui_node);
+    }
+
     void show(Graph<Node>& graph_) const override
     {
         const float node_width = 100.f;
@@ -84,6 +99,21 @@ struct MultiplyNode : public UiNode
     using UiNode::UiNode;
 
     int lhs, rhs;
+
+    static std::shared_ptr<MultiplyNode> Create(Graph<Node>& graph_)
+    {
+        const Node value(NodeType::value, 0.f);
+        const Node op(NodeType::multiply);
+
+        auto ui_node = new MultiplyNode(graph_.insert_node(op));
+        ui_node->lhs = graph_.insert_node(value);
+        ui_node->rhs = graph_.insert_node(value);
+
+        graph_.insert_edge(ui_node->id(), ui_node->lhs);
+        graph_.insert_edge(ui_node->id(), ui_node->rhs);
+
+        return std::shared_ptr<MultiplyNode>(ui_node);
+    }
 
     void show(Graph<Node>& graph_) const override
     {
@@ -149,6 +179,23 @@ struct OutputNode : public UiNode
     using UiNode::UiNode;
 
     int r, g, b;
+
+    static std::shared_ptr<OutputNode> Create(Graph<Node>& graph_)
+    {
+        const Node value(NodeType::value, 0.f);
+        const Node out(NodeType::output);
+
+        auto ui_node = new OutputNode(graph_.insert_node(out));
+        ui_node->r = graph_.insert_node(value);
+        ui_node->g = graph_.insert_node(value);
+        ui_node->b = graph_.insert_node(value);
+
+        graph_.insert_edge(ui_node->id(), ui_node->r);
+        graph_.insert_edge(ui_node->id(), ui_node->g);
+        graph_.insert_edge(ui_node->id(), ui_node->b);
+
+        return std::shared_ptr<OutputNode>(ui_node);
+    }
 
     void show(Graph<Node>& graph_) const override
     {
@@ -229,6 +276,20 @@ struct SineNode : public UiNode
     using UiNode::UiNode;
 
     int input;
+
+    static std::shared_ptr<SineNode> Create(Graph<Node>& graph_)
+    {
+        const Node value(NodeType::value, 0.f);
+        const Node op(NodeType::sine);
+
+        auto ui_node = new SineNode(graph_.insert_node(op));
+        ui_node->input = graph_.insert_node(value);
+
+        graph_.insert_edge(ui_node->id(), ui_node->input);
+
+        return std::shared_ptr<SineNode>(ui_node);
+    }
+
     void show(Graph<Node>& graph_) const override
     {
         const float node_width = 100.0f;
@@ -278,6 +339,12 @@ struct TimeNode : public UiNode
 {
     using UiNode::UiNode;
 
+    static std::shared_ptr<UiNode> Create(Graph<Node>& graph_)
+    {
+        auto ui_node = new TimeNode(graph_.insert_node(Node(NodeType::time)));
+        return std::shared_ptr<TimeNode>(ui_node);
+    }
+
     void show(Graph<Node>& graph_) const override
     {
         imnodes::BeginNode(id());
@@ -300,70 +367,20 @@ struct TimeNode : public UiNode
     }
 };
 
-std::shared_ptr<UiNode> UiNode::CreateAdd(Graph<Node>& graph_)
-{
-    const Node value(NodeType::value, 0.f);
-    const Node op(NodeType::add);
-
-    auto ui_node = new AddNode(graph_.insert_node(op));
-    ui_node->lhs = graph_.insert_node(value);
-    ui_node->rhs = graph_.insert_node(value);
-
-    graph_.insert_edge(ui_node->id(), ui_node->lhs);
-    graph_.insert_edge(ui_node->id(), ui_node->rhs);
-
-    return std::shared_ptr<UiNode>(ui_node);
-}
+std::shared_ptr<UiNode> UiNode::CreateAdd(Graph<Node>& graph_) { return AddNode::Create(graph_); }
 
 std::shared_ptr<UiNode> UiNode::CreateMultiply(Graph<Node>& graph_)
 {
-    const Node value(NodeType::value, 0.f);
-    const Node op(NodeType::multiply);
-
-    auto ui_node = new MultiplyNode(graph_.insert_node(op));
-    ui_node->lhs = graph_.insert_node(value);
-    ui_node->rhs = graph_.insert_node(value);
-
-    graph_.insert_edge(ui_node->id(), ui_node->lhs);
-    graph_.insert_edge(ui_node->id(), ui_node->rhs);
-
-    return std::shared_ptr<UiNode>(ui_node);
+    return MultiplyNode::Create(graph_);
 }
 
 std::shared_ptr<UiNode> UiNode::CreateOutput(Graph<Node>& graph_)
 {
-    const Node value(NodeType::value, 0.f);
-    const Node out(NodeType::output);
-
-    auto ui_node = new OutputNode(graph_.insert_node(out));
-    ui_node->r = graph_.insert_node(value);
-    ui_node->g = graph_.insert_node(value);
-    ui_node->b = graph_.insert_node(value);
-
-    graph_.insert_edge(ui_node->id(), ui_node->r);
-    graph_.insert_edge(ui_node->id(), ui_node->g);
-    graph_.insert_edge(ui_node->id(), ui_node->b);
-
-    return std::shared_ptr<UiNode>(ui_node);
+    return OutputNode::Create(graph_);
 }
 
-std::shared_ptr<UiNode> UiNode::CreateSine(Graph<Node>& graph_)
-{
-    const Node value(NodeType::value, 0.f);
-    const Node op(NodeType::sine);
+std::shared_ptr<UiNode> UiNode::CreateSine(Graph<Node>& graph_) { return SineNode::Create(graph_); }
 
-    auto ui_node = new SineNode(graph_.insert_node(op));
-    ui_node->input = graph_.insert_node(value);
-
-    graph_.insert_edge(ui_node->id(), ui_node->input);
-
-    return std::shared_ptr<UiNode>(ui_node);
-}
-
-std::shared_ptr<UiNode> UiNode::CreateTime(Graph<Node>& graph_)
-{
-    auto ui_node = new TimeNode(graph_.insert_node(Node(NodeType::time)));
-    return std::shared_ptr<UiNode>(ui_node);
-}
+std::shared_ptr<UiNode> UiNode::CreateTime(Graph<Node>& graph_) { return TimeNode::Create(graph_); }
 
 } // namespace example
