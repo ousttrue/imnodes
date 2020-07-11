@@ -1,14 +1,16 @@
 #pragma once
 
+#include <stddef.h>
 #include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <stack>
 #include <unordered_map>
-#include <stddef.h>
 #include <utility>
 #include <vector>
 #include <span>
+#include <functional>
+#include <stdexcept>
 
 namespace example
 {
@@ -17,19 +19,25 @@ namespace example
 template<typename NodePayload>
 class Graph
 {
-    int current_id_ = 0;
+    static inline int current_id_ = 0;
 
 public:
-    // These contains map to the node id
+    struct Attribute
+    {
+        int id;
+        std::string name;
+        float value = 0.0f;
+    };
+
     struct Node
     {
+        int id;
         NodePayload payload;
-        Node(const NodePayload &payload)
-        : payload(payload)
-        {           
-        }
-        
+        Node(int id, const NodePayload& payload) : id(id), payload(payload) {}
+
         std::vector<int> neighbors;
+        std::vector<Attribute> inputs;
+        std::vector<Attribute> outputs;
 
         void erase_edge(int to_node)
         {
@@ -37,9 +45,22 @@ public:
             assert(iter != neighbors.end());
             neighbors.erase(iter);
         }
+
+        void add_input(const std::string& name)
+        {
+            const int id = current_id_++;
+            inputs.push_back(Attribute{id, name});
+        }
+
+        void add_output(const std::string& name)
+        {
+            const int id = current_id_++;
+            outputs.push_back(Attribute{id, name});
+        }
     };
 
 private:
+    // These contains map to the node id
     std::unordered_map<int, Node> nodes_;
 
 public:
@@ -60,26 +81,56 @@ public:
 
     // Element access
 
-    Node& node(const int id)
-    {
-        return const_cast<Node&>(static_cast<const Graph*>(this)->node(id));
-    }
+    Node& node(int id) { return const_cast<Node&>(static_cast<const Graph*>(this)->node(id)); }
 
-    const Node& node(const int id) const
+    const Node& node(int id) const
     {
         const auto iter = nodes_.find(id);
         assert(iter != nodes_.end());
         return iter->second;
     }
 
+    const Node& node_from_output(int id) const
+    {
+        for (auto& [k, v] : nodes_)
+        {
+            for (auto& output : v.outputs)
+            {
+                if (output.id == id)
+                {
+                    return v;
+                }
+            }
+        }
+
+        throw std::runtime_error("not found");
+    }
+
+    const Node& node_from_input(int id) const
+    {
+        for (auto& [k, v] : nodes_)
+        {
+            for (auto& input : v.inputs)
+            {
+                if (input.id == id)
+                {
+                    return v;
+                }
+            }
+        }
+
+        throw std::runtime_error("not found");
+    }
+
     // Modifiers
 
-    int insert_node(const NodePayload& node)
+    NodePayload insert_node(const std::function<NodePayload(int)>& create)
     {
         const int id = current_id_++;
         assert(!nodes_.contains(id));
-        nodes_.insert(std::make_pair(id, Node(node)));
-        return id;
+        auto payload = create(id);
+        nodes_.insert(std::make_pair(id, Node(id, payload)));
+        return payload;
     }
 
     void erase_node(const int id)
@@ -111,13 +162,16 @@ public:
     {
         const int id = current_id_++;
         assert(edges_.find(id) == edges_.end());
-        assert(nodes_.find(from) != nodes_.end());
-        assert(nodes_.find(to) != nodes_.end());
+        // assert(nodes_.find(from) != nodes_.end());
+        // assert(nodes_.find(to) != nodes_.end());
         edges_.insert(std::make_pair(id, Edge(id, from, to)));
 
         // update neighbor list
-        assert(nodes_.find(from) != nodes_.end());
-        nodes_.find(from)->second.neighbors.push_back(to);
+        auto from_node = node_from_output(from);
+        auto to_node = node_from_input(to);
+
+        // assert(nodes_.find(from) != nodes_.end());
+        from_node.neighbors.push_back(to_node.id);
 
         return id;
     }

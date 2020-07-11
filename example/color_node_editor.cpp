@@ -1,5 +1,4 @@
 #include "node_editor.h"
-#include "node.h"
 #include "graph.h"
 #include "uinode.h"
 #include <imnodes.h>
@@ -28,85 +27,85 @@ T clamp(T x, T a, T b)
 
 static float current_time_seconds = 0.f;
 
-ImU32 evaluate(const Graph<Node>& graph, const int root_node)
-{
-    std::stack<int> postorder;
-    dfs_traverse(
-        graph, root_node, [&postorder](const int node_id) -> void { postorder.push(node_id); });
+// ImU32 evaluate(const Graph<std::shared_ptr<UiNode>>& graph, const int root_node)
+// {
+//     std::stack<int> postorder;
+//     dfs_traverse(
+//         graph, root_node, [&postorder](const int node_id) -> void { postorder.push(node_id); });
 
-    std::stack<float> value_stack;
-    while (!postorder.empty())
-    {
-        const int id = postorder.top();
-        postorder.pop();
-        auto& node = graph.node(id).payload;
+//     std::stack<float> value_stack;
+//     while (!postorder.empty())
+//     {
+//         const int id = postorder.top();
+//         postorder.pop();
+//         auto& node = graph.node(id).payload;
 
-        switch (node.type)
-        {
-        case NodeType::add:
-        {
-            const float rhs = value_stack.top();
-            value_stack.pop();
-            const float lhs = value_stack.top();
-            value_stack.pop();
-            value_stack.push(lhs + rhs);
-        }
-        break;
-        case NodeType::multiply:
-        {
-            const float rhs = value_stack.top();
-            value_stack.pop();
-            const float lhs = value_stack.top();
-            value_stack.pop();
-            value_stack.push(rhs * lhs);
-        }
-        break;
-        case NodeType::sine:
-        {
-            const float x = value_stack.top();
-            value_stack.pop();
-            const float res = std::abs(std::sin(x));
-            value_stack.push(res);
-        }
-        break;
-        case NodeType::time:
-        {
-            value_stack.push(current_time_seconds);
-        }
-        break;
-        case NodeType::value:
-        {
-            // If the edge does not have an edge connecting to another node, then just use the value
-            // at this node. It means the node's input pin has not been connected to anything and
-            // the value comes from the node's UI.
-            if (graph.node(id).neighbors.size() == 0ull)
-            {
-                value_stack.push(node.value);
-            }
-        }
-        break;
-        default:
-            break;
-        }
-    }
+//         switch (node.type)
+//         {
+//         case NodeType::add:
+//         {
+//             const float rhs = value_stack.top();
+//             value_stack.pop();
+//             const float lhs = value_stack.top();
+//             value_stack.pop();
+//             value_stack.push(lhs + rhs);
+//         }
+//         break;
+//         case NodeType::multiply:
+//         {
+//             const float rhs = value_stack.top();
+//             value_stack.pop();
+//             const float lhs = value_stack.top();
+//             value_stack.pop();
+//             value_stack.push(rhs * lhs);
+//         }
+//         break;
+//         case NodeType::sine:
+//         {
+//             const float x = value_stack.top();
+//             value_stack.pop();
+//             const float res = std::abs(std::sin(x));
+//             value_stack.push(res);
+//         }
+//         break;
+//         case NodeType::time:
+//         {
+//             value_stack.push(current_time_seconds);
+//         }
+//         break;
+//         case NodeType::value:
+//         {
+//             // If the edge does not have an edge connecting to another node, then just use the value
+//             // at this node. It means the node's input pin has not been connected to anything and
+//             // the value comes from the node's UI.
+//             if (graph.node(id).neighbors.size() == 0ull)
+//             {
+//                 value_stack.push(node.value);
+//             }
+//         }
+//         break;
+//         default:
+//             break;
+//         }
+//     }
 
-    // The final output node isn't evaluated in the loop -- instead we just pop
-    // the three values which should be in the stack.
-    assert(value_stack.size() == 3ull);
-    const int b = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
-    value_stack.pop();
-    const int g = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
-    value_stack.pop();
-    const int r = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
-    value_stack.pop();
+//     // The final output node isn't evaluated in the loop -- instead we just pop
+//     // the three values which should be in the stack.
+//     assert(value_stack.size() == 3ull);
+//     const int b = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
+//     value_stack.pop();
+//     const int g = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
+//     value_stack.pop();
+//     const int r = static_cast<int>(255.f * clamp(value_stack.top(), 0.f, 1.f) + 0.5f);
+//     value_stack.pop();
 
-    return IM_COL32(r, g, b, 255);
-}
+//     return IM_COL32(r, g, b, 255);
+// }
 
 class ColorNodeEditor
 {
 public:
-    Graph<Node> graph_;
+    Graph<std::shared_ptr<UiNode>> graph_;
     std::vector<std::shared_ptr<UiNode>> nodes_;
     int root_node_id_ = -1;
 
@@ -137,7 +136,7 @@ public:
             ImU32 color = IM_COL32(255, 20, 147, 255);
             if (root_node_id_ != -1)
             {
-                color = evaluate(graph_, root_node_id_);
+                // color = evaluate(graph_, root_node_id_);
             }
             ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
             ImGui::Begin("output color");
@@ -157,12 +156,6 @@ public:
 
         for (const auto& [_, edge] : graph_.edges_)
         {
-            // If edge doesn't start at value, then it's an internal edge, i.e.
-            // an edge which links a node's operation to its input. We don't
-            // want to render node internals with visible links.
-            if (graph_.node(edge.from).payload.type != NodeType::value)
-                continue;
-
             imnodes::Link(edge.id, edge.from, edge.to);
         }
 
@@ -177,18 +170,18 @@ public:
             int start_attr, end_attr;
             if (imnodes::IsLinkCreated(&start_attr, &end_attr))
             {
-                const NodeType start_type = graph_.node(start_attr).payload.type;
-                const NodeType end_type = graph_.node(end_attr).payload.type;
+                // const NodeType start_type = graph_.node(start_attr).payload.type;
+                // const NodeType end_type = graph_.node(end_attr).payload.type;
 
-                const bool valid_link = start_type != end_type;
-                if (valid_link)
+                // const bool valid_link = start_type != end_type;
+                // if (valid_link)
                 {
                     // Ensure the edge is always directed from the value to
                     // whatever produces the value
-                    if (start_type != NodeType::value)
-                    {
-                        std::swap(start_attr, end_attr);
-                    }
+                    // if (start_type != NodeType::value)
+                    // {
+                    //     std::swap(start_attr, end_attr);
+                    // }
                     graph_.insert_edge(start_attr, end_attr);
                 }
             }
@@ -231,12 +224,12 @@ public:
                         nodes_.begin(), nodes_.end(), [node_id](const auto& node) -> bool {
                             return node->id() == node_id;
                         });
-                    nodes_.erase(iter);
                     // Erase any additional internal nodes
                     if ((*iter)->erase(graph_))
                     {
                         root_node_id_ = -1;
                     }
+                    nodes_.erase(iter);
                 }
             }
         }

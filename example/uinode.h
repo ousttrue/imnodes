@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "node.h"
+#include <string_view>
 #include "graph.h"
 
 namespace example
@@ -13,23 +13,27 @@ class UiNode
     // stored in the structs.
     int m_id;
 
+    std::string m_name;
+
     // avoid copy
     UiNode(const UiNode&) = delete;
     UiNode& operator=(const UiNode&) = delete;
 
 protected:
-    UiNode(int id) : m_id(id) {}
+    UiNode(int id, const std::string& name) : m_id(id), m_name(name) {}
 
 public:
     int id() const { return m_id; }
-    static std::shared_ptr<UiNode> CreateAdd(Graph<Node>& graph);
-    static std::shared_ptr<UiNode> CreateMultiply(Graph<Node>& graph);
-    static std::shared_ptr<UiNode> CreateOutput(Graph<Node>& graph);
-    static std::shared_ptr<UiNode> CreateSine(Graph<Node>& graph);
-    static std::shared_ptr<UiNode> CreateTime(Graph<Node>& graph);
+    std::string_view name() const { return m_name; }
 
-    virtual void show(Graph<Node>& graph) const = 0;
-    virtual bool erase(Graph<Node>& graph) const = 0;
+    static std::shared_ptr<UiNode> CreateAdd(Graph<std::shared_ptr<UiNode>>& graph);
+    static std::shared_ptr<UiNode> CreateMultiply(Graph<std::shared_ptr<UiNode>>& graph);
+    static std::shared_ptr<UiNode> CreateOutput(Graph<std::shared_ptr<UiNode>>& graph);
+    static std::shared_ptr<UiNode> CreateSine(Graph<std::shared_ptr<UiNode>>& graph);
+    static std::shared_ptr<UiNode> CreateTime(Graph<std::shared_ptr<UiNode>>& graph);
+
+    virtual void show(Graph<std::shared_ptr<UiNode>>& graph) const;
+    virtual bool erase(Graph<std::shared_ptr<UiNode>>& graph) const;
 };
 
 } // namespace example
