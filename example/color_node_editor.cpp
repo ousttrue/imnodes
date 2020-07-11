@@ -43,7 +43,7 @@ public:
             ImU32 color = IM_COL32(255, 20, 147, 255);
             for (auto& [id, node] : graph_.nodes_)
             {
-                node.value->evaluate(graph_);
+                node.value->evaluate(graph_, node);
             }
         }
     }
@@ -54,7 +54,7 @@ public:
 
         for (auto& [id, node] : graph_.nodes_)
         {
-            node.value->show(graph_);
+            node.value->show(graph_, node);
         }
 
         for (const auto& [id, edge] : graph_.edges_)
@@ -134,32 +134,32 @@ public:
 
             if (ImGui::MenuItem("add"))
             {
-                auto ui_node = UiNode::CreateAdd(graph_);
-                imnodes::SetNodeScreenSpacePos(ui_node->id(), click_pos);
+                auto &node = UiNode::CreateAdd(graph_);
+                imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("multiply"))
             {
-                auto ui_node = UiNode::CreateMultiply(graph_);
-                imnodes::SetNodeScreenSpacePos(ui_node->id(), click_pos);
+                auto &node = UiNode::CreateMultiply(graph_);
+                imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("output"))
             {
-                auto ui_node = UiNode::CreateOutput(graph_);
-                imnodes::SetNodeScreenSpacePos(ui_node->id(), click_pos);
+                auto &node = UiNode::CreateOutput(graph_);
+                imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("sine"))
             {
-                auto ui_node = UiNode::CreateSine(graph_);
-                imnodes::SetNodeScreenSpacePos(ui_node->id(), click_pos);
+                auto &node = UiNode::CreateSine(graph_);
+                imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("time"))
             {
-                auto ui_node = UiNode::CreateTime(graph_);
-                imnodes::SetNodeScreenSpacePos(ui_node->id(), click_pos);
+                auto &node = UiNode::CreateTime(graph_);
+                imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             ImGui::EndPopup();

@@ -52,13 +52,13 @@ public:
             neighbors.erase(iter);
         }
 
-        void add_input(const InputValue &input)
+        void add_input(const InputValue& input)
         {
             const int id = current_id_++;
             inputs.push_back(InputAttribute(id, input));
         }
 
-        void add_output(const OutputValue &output)
+        void add_output(const OutputValue& output)
         {
             const int id = current_id_++;
             outputs.push_back(OutputAttribute(id, output));
@@ -86,16 +86,14 @@ public:
 
     // Element access
 
-    Node& node(int id) { return const_cast<Node&>(static_cast<const Graph*>(this)->node(id)); }
-
-    const Node& node(int id) const
+    Node& node(const int id)
     {
         const auto iter = nodes_.find(id);
         assert(iter != nodes_.end());
         return iter->second;
     }
 
-    const Node& node_from_output(int id) const
+    Node& node_from_output(int id)
     {
         for (auto& [k, v] : nodes_)
         {
@@ -111,7 +109,7 @@ public:
         throw std::runtime_error("not found");
     }
 
-    const Node& node_from_input(int id) const
+    Node& node_from_input(int id)
     {
         for (auto& [k, v] : nodes_)
         {
@@ -129,13 +127,12 @@ public:
 
     // Modifiers
 
-    NodeValue insert_node(const std::function<NodeValue(int)>& create)
+    Node& insert_node(const NodeValue& value)
     {
         const int id = current_id_++;
-        assert(!nodes_.contains(id));
-        auto payload = create(id);
-        nodes_.insert(std::make_pair(id, Node(id, payload)));
-        return payload;
+        auto inserted = nodes_.emplace(id, Node(id, value));
+        assert(inserted.second);
+        return inserted.first->second;
     }
 
     void erase_node(const int id)
@@ -181,8 +178,8 @@ public:
         edges_.insert(std::make_pair(id, Edge(id, from, to)));
 
         // update neighbor list
-        auto from_node = node_from_output(from);
-        auto to_node = node_from_input(to);
+        auto& from_node = node_from_output(from);
+        auto& to_node = node_from_input(to);
 
         // assert(nodes_.find(from) != nodes_.end());
         from_node.neighbors.push_back(to_node.id);

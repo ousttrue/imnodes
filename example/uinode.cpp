@@ -5,10 +5,10 @@
 namespace example
 {
 
-void UiNode::show(GraphType& graph_) const
+void UiNode::show(GraphType& graph, GraphType::Node& node) const
 {
     const float node_width = 100.f;
-    imnodes::BeginNode(id());
+    imnodes::BeginNode(node.id);
 
     // header
     imnodes::BeginNodeTitleBar();
@@ -16,13 +16,11 @@ void UiNode::show(GraphType& graph_) const
     imnodes::EndNodeTitleBar();
 
     // inputs
-    auto node = graph_.node(id());
     for (auto& input : node.inputs)
     {
         imnodes::BeginInputAttribute(input.id);
         const float label_width = ImGui::CalcTextSize(input.value->name().data()).x;
         ImGui::TextUnformatted(input.value->name().data());
-        // if (graph_.node(lhs).neighbors.size() == 0ull)
         {
             ImGui::SameLine();
             ImGui::PushItemWidth(node_width - label_width);
@@ -46,7 +44,7 @@ void UiNode::show(GraphType& graph_) const
     imnodes::EndNode();
 }
 
-void UiNode::evaluate(GraphType& graph)
+void UiNode::evaluate(GraphType& graph, GraphType::Node& node)
 {
     if (name() == "output")
     {
@@ -58,68 +56,48 @@ void UiNode::evaluate(GraphType& graph)
     }
 }
 
-std::shared_ptr<UiNode> UiNode::CreateAdd(GraphType& graph_)
+GraphType::Node& UiNode::CreateAdd(GraphType& graph_)
 {
-    auto ui_node =
-        graph_.insert_node([](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "add")); });
-
-    auto& node = graph_.node(ui_node->id());
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("add"));
     node.add_input(std::make_shared<Input>("left"));
     node.add_input(std::make_shared<Input>("right"));
     node.add_output(std::make_shared<Output>("result"));
-
-    return ui_node;
+    return node;
 }
 
-std::shared_ptr<UiNode> UiNode::CreateMultiply(GraphType& graph_)
+GraphType::Node& UiNode::CreateMultiply(GraphType& graph_)
 {
-    auto ui_node = graph_.insert_node(
-        [](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "multiply")); });
-
-    auto& node = graph_.node(ui_node->id());
+    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("multiply")));
     node.add_input(std::make_shared<Input>("left"));
     node.add_input(std::make_shared<Input>("right"));
     node.add_output(std::make_shared<Output>("result"));
-
-    return ui_node;
+    return node;
 }
 
-std::shared_ptr<UiNode> UiNode::CreateOutput(GraphType& graph_)
+GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
 {
-    auto ui_node = graph_.insert_node(
-        [](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "output")); });
-
-    auto& node = graph_.node(ui_node->id());
+    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("output")));
     // input only
     node.add_input(std::make_shared<Input>("r"));
     node.add_input(std::make_shared<Input>("g"));
     node.add_input(std::make_shared<Input>("b"));
-
-    return ui_node;
+    return node;
 }
 
-std::shared_ptr<UiNode> UiNode::CreateSine(GraphType& graph_)
+GraphType::Node& UiNode::CreateSine(GraphType& graph_)
 {
-    auto ui_node =
-        graph_.insert_node([](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "sine")); });
-
-    auto& node = graph_.node(ui_node->id());
+    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("sine")));
     node.add_input(std::make_shared<Input>("theta"));
     node.add_output(std::make_shared<Output>("value"));
-
-    return ui_node;
+    return node;
 }
 
-std::shared_ptr<UiNode> UiNode::CreateTime(GraphType& graph_)
+GraphType::Node& UiNode::CreateTime(GraphType& graph_)
 {
-    auto ui_node =
-        graph_.insert_node([](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "time")); });
-
-    auto& node = graph_.node(ui_node->id());
+    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("time")));
     // output only
     node.add_output(std::make_shared<Output>("time"));
-
-    return ui_node;
+    return node;
 }
 
 } // namespace example

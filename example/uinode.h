@@ -39,26 +39,23 @@ class UiNode
     UiNode(const UiNode&) = delete;
     UiNode& operator=(const UiNode&) = delete;
 
-    int m_id;
     std::string m_name;
 
-    UiNode(int id, const std::string& name) : m_id(id), m_name(name) {}
-
 public:
-    int id() const { return m_id; }
+    UiNode(const std::string& name) : m_name(name) {}
     std::string_view name() const { return m_name; }
 
     // draw imgui
-    void show(GraphType& graph) const;
+    void show(GraphType& graph, GraphType::Node &node) const;
 
     // calculate attribute values
-    void evaluate(GraphType& graph);
+    void evaluate(GraphType& graph, GraphType::Node &node);
 
-    static std::shared_ptr<UiNode> CreateAdd(GraphType& graph);
-    static std::shared_ptr<UiNode> CreateMultiply(GraphType& graph);
-    static std::shared_ptr<UiNode> CreateOutput(GraphType& graph);
-    static std::shared_ptr<UiNode> CreateSine(GraphType& graph);
-    static std::shared_ptr<UiNode> CreateTime(GraphType& graph);
+    static GraphType::Node& CreateAdd(GraphType& graph);
+    static GraphType::Node& CreateMultiply(GraphType& graph);
+    static GraphType::Node& CreateOutput(GraphType& graph);
+    static GraphType::Node& CreateSine(GraphType& graph);
+    static GraphType::Node& CreateTime(GraphType& graph);
 };
 
 } // namespace example
