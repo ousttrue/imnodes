@@ -16,28 +16,34 @@ namespace example
 {
 
 // a very simple directional graph
-template<typename NodePayload>
+template<typename NodeValue, typename InputValue, typename OutputValue>
 class Graph
 {
     static inline int current_id_ = 0;
 
 public:
-    struct Attribute
+    struct InputAttribute
     {
         int id;
-        std::string name;
-        float value = 0.0f;
+        InputValue value;
+        InputAttribute(int id, const InputValue& value) : id(id), value(value) {}
+    };
+    struct OutputAttribute
+    {
+        int id;
+        OutputValue value;
+        OutputAttribute(int id, const OutputValue& value) : id(id), value(value) {}
     };
 
     struct Node
     {
         int id;
-        NodePayload payload;
-        Node(int id, const NodePayload& payload) : id(id), payload(payload) {}
+        NodeValue value;
+        Node(int id, const NodeValue& value) : id(id), value(value) {}
 
         std::vector<int> neighbors;
-        std::vector<Attribute> inputs;
-        std::vector<Attribute> outputs;
+        std::vector<InputAttribute> inputs;
+        std::vector<OutputAttribute> outputs;
 
         void erase_edge(int to_node)
         {
@@ -46,16 +52,16 @@ public:
             neighbors.erase(iter);
         }
 
-        void add_input(const std::string& name)
+        void add_input(const InputValue &input)
         {
             const int id = current_id_++;
-            inputs.push_back(Attribute{id, name});
+            inputs.push_back(InputAttribute(id, input));
         }
 
-        void add_output(const std::string& name)
+        void add_output(const OutputValue &output)
         {
             const int id = current_id_++;
-            outputs.push_back(Attribute{id, name});
+            outputs.push_back(OutputAttribute(id, output));
         }
     };
 
@@ -123,7 +129,7 @@ public:
 
     // Modifiers
 
-    NodePayload insert_node(const std::function<NodePayload(int)>& create)
+    NodeValue insert_node(const std::function<NodeValue(int)>& create)
     {
         const int id = current_id_++;
         assert(!nodes_.contains(id));
@@ -161,7 +167,7 @@ public:
     /// create connection from attribute between to attribute
     ///
     /// check validation
-    ///    
+    ///
     int insert_edge(const int from, const int to)
     {
         //

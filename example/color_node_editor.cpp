@@ -14,7 +14,7 @@ static float current_time_seconds = 0.f;
 class ColorNodeEditor
 {
 public:
-    Graph<std::shared_ptr<UiNode>> graph_;
+    Graph<std::shared_ptr<UiNode>, InputPtr, OutputPtr> graph_;
 
     void show()
     {
@@ -43,7 +43,7 @@ public:
             ImU32 color = IM_COL32(255, 20, 147, 255);
             for (auto& [id, node] : graph_.nodes_)
             {
-                node.payload->evaluate(graph_);
+                node.value->evaluate(graph_);
             }
         }
     }
@@ -54,7 +54,7 @@ public:
 
         for (auto& [id, node] : graph_.nodes_)
         {
-            node.payload->show(graph_);
+            node.value->show(graph_);
         }
 
         for (const auto& [id, edge] : graph_.edges_)

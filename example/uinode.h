@@ -6,6 +6,33 @@
 namespace example
 {
 
+class Input
+{
+    std::string m_name;
+    float m_value = 1.0f;
+
+public:
+    Input(const std::string& name) : m_name(name) {}
+    std::string_view name() const { return m_name; }
+    float* ptr() { return &m_value; }
+};
+using InputPtr = std::shared_ptr<Input>;
+class Output
+{
+    std::string m_name;
+    float m_value = 1.0f;
+
+public:
+    Output(const std::string& name) : m_name(name) {}
+    std::string_view name() const { return m_name; }
+    float* ptr() { return &m_value; }
+};
+using OutputPtr = std::shared_ptr<Output>;
+
+class UiNode;
+using UiNodePtr = std::shared_ptr<UiNode>;
+using GraphType = Graph<UiNodePtr, InputPtr, OutputPtr>;
+
 class UiNode
 {
     // avoid copy
@@ -22,16 +49,16 @@ public:
     std::string_view name() const { return m_name; }
 
     // draw imgui
-    void show(Graph<std::shared_ptr<UiNode>>& graph) const;
+    void show(GraphType& graph) const;
 
     // calculate attribute values
-    void evaluate(Graph<std::shared_ptr<UiNode>>& graph);
+    void evaluate(GraphType& graph);
 
-    static std::shared_ptr<UiNode> CreateAdd(Graph<std::shared_ptr<UiNode>>& graph);
-    static std::shared_ptr<UiNode> CreateMultiply(Graph<std::shared_ptr<UiNode>>& graph);
-    static std::shared_ptr<UiNode> CreateOutput(Graph<std::shared_ptr<UiNode>>& graph);
-    static std::shared_ptr<UiNode> CreateSine(Graph<std::shared_ptr<UiNode>>& graph);
-    static std::shared_ptr<UiNode> CreateTime(Graph<std::shared_ptr<UiNode>>& graph);
+    static std::shared_ptr<UiNode> CreateAdd(GraphType& graph);
+    static std::shared_ptr<UiNode> CreateMultiply(GraphType& graph);
+    static std::shared_ptr<UiNode> CreateOutput(GraphType& graph);
+    static std::shared_ptr<UiNode> CreateSine(GraphType& graph);
+    static std::shared_ptr<UiNode> CreateTime(GraphType& graph);
 };
 
 } // namespace example
