@@ -46,12 +46,6 @@ void UiNode::show(Graph<std::shared_ptr<UiNode>>& graph_) const
     imnodes::EndNode();
 }
 
-bool UiNode::erase(Graph<std::shared_ptr<UiNode>>& graph_) const
-{
-    graph_.erase_node(id());
-    return false;
-}
-
 std::shared_ptr<UiNode> UiNode::CreateAdd(Graph<std::shared_ptr<UiNode>>& graph_)
 {
     auto ui_node =

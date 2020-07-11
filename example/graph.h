@@ -59,7 +59,6 @@ public:
         }
     };
 
-private:
     // These contains map to the node id
     std::unordered_map<int, Node> nodes_;
 

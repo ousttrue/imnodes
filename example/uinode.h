@@ -33,7 +33,6 @@ public:
     static std::shared_ptr<UiNode> CreateTime(Graph<std::shared_ptr<UiNode>>& graph);
 
     virtual void show(Graph<std::shared_ptr<UiNode>>& graph) const;
-    virtual bool erase(Graph<std::shared_ptr<UiNode>>& graph) const;
 };
 
 } // namespace example
