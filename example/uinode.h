@@ -8,11 +8,14 @@ namespace example
 
 class UiNode
 {
-
     // The identifying id of the ui node. For add, multiply, sine, and time
     // this is the "operation" node id. The additional input nodes are
     // stored in the structs.
     int m_id;
+
+    // avoid copy
+    UiNode(const UiNode&) = delete;
+    UiNode& operator=(const UiNode&) = delete;
 
 protected:
     UiNode(int id) : m_id(id) {}
