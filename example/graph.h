@@ -157,8 +157,17 @@ public:
         nodes_.erase(id);
     }
 
+    ///
+    /// create connection from attribute between to attribute
+    ///
+    /// check validation
+    ///    
     int insert_edge(const int from, const int to)
     {
+        //
+        // TODO: avoid loop
+        //
+
         const int id = current_id_++;
         assert(edges_.find(id) == edges_.end());
         // assert(nodes_.find(from) != nodes_.end());
@@ -193,25 +202,4 @@ public:
     }
 };
 
-template<typename NodePayload, typename Visitor>
-void dfs_traverse(const Graph<NodePayload>& graph, const int start_node, Visitor visitor)
-{
-    std::stack<int> stack;
-
-    stack.push(start_node);
-
-    while (!stack.empty())
-    {
-        const int current_node = stack.top();
-        stack.pop();
-
-        visitor(current_node);
-
-        auto& node = graph.node(current_node);
-        for (auto neighbor : node.neighbors)
-        {
-            stack.push(neighbor);
-        }
-    }
-}
 } // namespace example

@@ -46,6 +46,18 @@ void UiNode::show(Graph<std::shared_ptr<UiNode>>& graph_) const
     imnodes::EndNode();
 }
 
+void UiNode::evaluate(Graph<std::shared_ptr<UiNode>>& graph)
+{    
+    if (name() == "output")
+    {
+        ImU32 color = IM_COL32(255, 20, 147, 255);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
+        ImGui::Begin("output color");
+        ImGui::End();
+        ImGui::PopStyleColor();
+    }
+}
+
 std::shared_ptr<UiNode> UiNode::CreateAdd(Graph<std::shared_ptr<UiNode>>& graph_)
 {
     auto ui_node =
@@ -88,8 +100,8 @@ std::shared_ptr<UiNode> UiNode::CreateOutput(Graph<std::shared_ptr<UiNode>>& gra
 
 std::shared_ptr<UiNode> UiNode::CreateSine(Graph<std::shared_ptr<UiNode>>& graph_)
 {
-    auto ui_node = graph_.insert_node(
-        [](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "sine")); });
+    auto ui_node =
+        graph_.insert_node([](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "sine")); });
 
     auto& node = graph_.node(ui_node->id());
     node.add_input("theta");
@@ -100,8 +112,8 @@ std::shared_ptr<UiNode> UiNode::CreateSine(Graph<std::shared_ptr<UiNode>>& graph
 
 std::shared_ptr<UiNode> UiNode::CreateTime(Graph<std::shared_ptr<UiNode>>& graph_)
 {
-    auto ui_node = graph_.insert_node(
-        [](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "time")); });
+    auto ui_node =
+        graph_.insert_node([](int id) { return std::shared_ptr<UiNode>(new UiNode(id, "time")); });
 
     auto& node = graph_.node(ui_node->id());
     // output only
