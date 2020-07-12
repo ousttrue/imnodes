@@ -15,6 +15,8 @@ public:
 
     void show()
     {
+        static uint32_t s_frame = 0;
+
         {
             // The node editor window
             ImGui::Begin("color node editor");
@@ -33,12 +35,12 @@ public:
         }
 
         {
-            // The color output window
-            ImU32 color = IM_COL32(255, 20, 147, 255);
+            // evaluate node value and show output
             for (auto& [id, node] : graph_.nodes_)
             {
-                node.data->evaluate(graph_, node);
+                node.data->evaluate(graph_, node, s_frame);
             }
+            ++s_frame;
         }
     }
 

@@ -93,7 +93,12 @@ public:
         return iter->second;
     }
 
-    Node& node_from_output(int id)
+    struct NodeOutput
+    {
+        Node& node;
+        OutputAttribute& output;
+    };
+    NodeOutput edge_output(int id)
     {
         for (auto& [k, v] : nodes_)
         {
@@ -101,7 +106,7 @@ public:
             {
                 if (output.id == id)
                 {
-                    return v;
+                    return NodeOutput{v, output};
                 }
             }
         }
@@ -109,7 +114,12 @@ public:
         throw std::runtime_error("not found");
     }
 
-    Node& node_from_input(int id)
+    struct NodeInput
+    {
+        Node& node;
+        InputAttribute& input;
+    };
+    NodeInput edge_input(int id)
     {
         for (auto& [k, v] : nodes_)
         {
@@ -117,7 +127,7 @@ public:
             {
                 if (input.id == id)
                 {
-                    return v;
+                    return NodeInput{v, input};
                 }
             }
         }
@@ -165,7 +175,7 @@ public:
     ///
     /// check validation
     ///
-    int insert_edge(const int from, const int to)
+    int insert_edge(const int from_idx, const int to_idx)
     {
         //
         // TODO: avoid loop
@@ -175,14 +185,14 @@ public:
         assert(edges_.find(id) == edges_.end());
         // assert(nodes_.find(from) != nodes_.end());
         // assert(nodes_.find(to) != nodes_.end());
-        edges_.insert(std::make_pair(id, Edge(id, from, to)));
+        edges_.insert(std::make_pair(id, Edge(id, from_idx, to_idx)));
 
         // update neighbor list
-        auto& from_node = node_from_output(from);
-        auto& to_node = node_from_input(to);
+        auto& [src, from] = edge_output(from_idx);
+        auto& [dst, to] = edge_input(to_idx);
 
         // assert(nodes_.find(from) != nodes_.end());
-        from_node.neighbors.push_back(to_node.id);
+        src.neighbors.push_back(dst.id);
 
         return id;
     }
@@ -202,6 +212,19 @@ public:
         }
 
         edges_.erase(edge_id);
+    }
+
+    Edge& edge_from_to(const InputAttribute& to)
+    {
+        for (auto& [id, edge] : edges_)
+        {
+            if (edge.to == to.id)
+            {
+                return edge;
+            }
+        }
+
+        throw std::runtime_error("not found");
     }
 };
 

@@ -49,8 +49,8 @@ public:
     // draw imgui
     void show(GraphType& graph, GraphType::Node& node) const;
 
-    // calculate attribute values
-    void evaluate(GraphType& graph, GraphType::Node& node);
+    // start recursive evaluation if node without outputs
+    void evaluate(GraphType& graph, GraphType::Node& node, uint32_t frame);
 
     // update node
     void update();

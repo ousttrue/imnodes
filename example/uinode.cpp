@@ -45,13 +45,25 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
     imnodes::EndNode();
 }
 
-void UiNode::evaluate(GraphType& graph, GraphType::Node& node)
+void evaluate_recursive(GraphType& graph, GraphType::Node& dst, uint32_t frame)
 {
-    if (name() == "output")
+    for (auto& to : dst.inputs)
     {
+        auto& edge = graph.edge_from_to(to);
+        auto& [src, from] = graph.edge_output(edge.from);
+    }
+}
+
+void UiNode::evaluate(GraphType& graph, GraphType::Node& node, uint32_t frame)
+{
+    if (node.outputs.empty())
+    {
+        // starts from end node
+        evaluate_recursive(graph, node, frame);
+
         ImU32 color = IM_COL32(255, 20, 147, 255);
         ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
-        ImGui::Begin("output color");
+        ImGui::Begin(node.data->name().data());
         ImGui::End();
         ImGui::PopStyleColor();
     }
