@@ -4,12 +4,9 @@
 #include <imnodes.h>
 #include <imgui.h>
 #include <SDL_keycode.h>
-#include <SDL_timer.h>
 
 namespace example
 {
-
-static float current_time_seconds = 0.f;
 
 class ColorNodeEditor
 {
@@ -18,9 +15,6 @@ public:
 
     void show()
     {
-        // Update timer context
-        current_time_seconds = 0.001f * SDL_GetTicks();
-
         {
             // The node editor window
             ImGui::Begin("color node editor");
@@ -134,31 +128,31 @@ public:
 
             if (ImGui::MenuItem("add"))
             {
-                auto &node = UiNode::CreateAdd(graph_);
+                auto& node = UiNode::CreateAdd(graph_);
                 imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("multiply"))
             {
-                auto &node = UiNode::CreateMultiply(graph_);
+                auto& node = UiNode::CreateMultiply(graph_);
                 imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("output"))
             {
-                auto &node = UiNode::CreateOutput(graph_);
+                auto& node = UiNode::CreateOutput(graph_);
                 imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("sine"))
             {
-                auto &node = UiNode::CreateSine(graph_);
+                auto& node = UiNode::CreateSine(graph_);
                 imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 
             if (ImGui::MenuItem("time"))
             {
-                auto &node = UiNode::CreateTime(graph_);
+                auto& node = UiNode::CreateTime(graph_);
                 imnodes::SetNodeScreenSpacePos(node.id, click_pos);
             }
 

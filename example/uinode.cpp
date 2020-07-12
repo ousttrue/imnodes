@@ -1,6 +1,7 @@
 #include "uinode.h"
 #include <imnodes.h>
 #include <imgui.h>
+#include <SDL_timer.h>
 
 namespace example
 {
@@ -58,25 +59,41 @@ void UiNode::evaluate(GraphType& graph, GraphType::Node& node)
 
 GraphType::Node& UiNode::CreateAdd(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::make_shared<UiNode>("add"));
-    node.add_input(std::make_shared<Pin>("left"));
-    node.add_input(std::make_shared<Pin>("right"));
-    node.add_output(std::make_shared<Pin>("result"));
+    auto lhs = std::make_shared<Pin>("left");
+    auto rhs = std::make_shared<Pin>("right");
+    auto result = std::make_shared<Pin>("result");
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("add", [lhs, rhs, result]() {
+        auto l = lhs->value();
+        auto r = rhs->value();
+        result->value(l + r);
+    }));
+    node.add_input(lhs);
+    node.add_input(rhs);
+    node.add_output(result);
     return node;
 }
 
 GraphType::Node& UiNode::CreateMultiply(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("multiply")));
-    node.add_input(std::make_shared<Pin>("left"));
-    node.add_input(std::make_shared<Pin>("right"));
-    node.add_output(std::make_shared<Pin>("result"));
+    auto lhs = std::make_shared<Pin>("left");
+    auto rhs = std::make_shared<Pin>("right");
+    auto result = std::make_shared<Pin>("result");
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("multiply", [lhs, rhs, result]() {
+        auto l = lhs->value();
+        auto r = rhs->value();
+        result->value(l * r);
+    }));
+    node.add_input(lhs);
+    node.add_input(rhs);
+    node.add_output(result);
     return node;
 }
 
 GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("output")));
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("output", []() {
+        // do nothing
+    }));
     // input only
     node.add_input(std::make_shared<Pin>("r"));
     node.add_input(std::make_shared<Pin>("g"));
@@ -86,17 +103,28 @@ GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
 
 GraphType::Node& UiNode::CreateSine(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("sine")));
-    node.add_input(std::make_shared<Pin>("theta"));
-    node.add_output(std::make_shared<Pin>("value"));
+    auto theta = std::make_shared<Pin>("theta");
+    auto sine = std::make_shared<Pin>("sine");
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("sine", [theta, sine]() {
+        auto value = theta->value();
+        sine->value(std::abs(std::sin(value)));
+    }));
+    node.add_input(theta);
+    node.add_output(sine);
     return node;
 }
 
 GraphType::Node& UiNode::CreateTime(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("time")));
+    auto time = std::make_shared<Pin>("time");
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("time", [time]() {
+        static float current_time_seconds = 0.f;
+        // Update timer context
+        current_time_seconds = 0.001f * SDL_GetTicks();
+        time->value(current_time_seconds);
+    }));
     // output only
-    node.add_output(std::make_shared<Pin>("time"));
+    node.add_output(time);
     return node;
 }
 

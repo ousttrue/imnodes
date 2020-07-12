@@ -2,6 +2,7 @@
 #include <memory>
 #include <string_view>
 #include <limits>
+#include <functional>
 #include "graph.h"
 
 namespace example
@@ -33,8 +34,16 @@ class UiNode
 
     std::string m_name;
 
+    using Operation = std::function<void()>;
+    Operation m_operation;
+
+    uint32_t m_lastFrame = -1;
+
 public:
-    UiNode(const std::string& name) : m_name(name) {}
+    UiNode(const std::string& name, const Operation& operation)
+        : m_name(name), m_operation(operation)
+    {
+    }
     std::string_view name() const { return m_name; }
 
     // draw imgui
