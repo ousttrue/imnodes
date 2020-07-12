@@ -11,10 +11,13 @@ namespace example
 class Pin
 {
     std::string m_name;
-    float m_value = std::numeric_limits<float>::quiet_NaN();
+    float m_value;
 
 public:
-    Pin(const std::string& name) : m_name(name) {}
+    Pin(const std::string& name, float value = std::numeric_limits<float>::quiet_NaN())
+        : m_name(name), m_value(value)
+    {
+    }
     std::string_view name() const { return m_name; }
     float& value() { return m_value; }
     void value(float n) { m_value = n; }
@@ -46,6 +49,17 @@ public:
     }
     std::string_view name() const { return m_name; }
 
+    bool isNewFrame(uint32_t frame)
+    {
+        if (m_lastFrame == frame)
+        {
+            // already processed
+            return false;
+        }
+        m_lastFrame = frame;
+        return true;
+    }
+
     // draw imgui
     void show(GraphType& graph, GraphType::Node& node) const;
 
@@ -53,7 +67,7 @@ public:
     void evaluate(GraphType& graph, GraphType::Node& node, uint32_t frame);
 
     // update node
-    void update();
+    void operate();
 
     static GraphType::Node& CreateAdd(GraphType& graph);
     static GraphType::Node& CreateMultiply(GraphType& graph);

@@ -1,4 +1,5 @@
 #include "uinode.h"
+#include <sstream>
 #include <imnodes.h>
 #include <imgui.h>
 #include <SDL_timer.h>
@@ -47,12 +48,35 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
 
 void evaluate_recursive(GraphType& graph, GraphType::Node& dst, uint32_t frame)
 {
+    if (!dst.data->isNewFrame(frame))
+    {
+        // already processed
+        return;
+    }
+
     for (auto& to : dst.inputs)
     {
-        auto& edge = graph.edge_from_to(to);
-        auto& [src, from] = graph.edge_output(edge.from);
+        auto edge = graph.get_edge(to);
+        if (!edge)
+        {
+            // not connected
+            continue;
+        }
+
+        auto& [src, from] = graph.edge_output(edge->from);
+
+        // update recursive
+        evaluate_recursive(graph, src, frame);
+
+        // operate
+        src.data->operate();
+
+        // propagate edge from to
+        to.data->value(from.data->value());
     }
 }
+
+void UiNode::operate() { m_operation(); }
 
 void UiNode::evaluate(GraphType& graph, GraphType::Node& node, uint32_t frame)
 {
@@ -61,11 +85,8 @@ void UiNode::evaluate(GraphType& graph, GraphType::Node& node, uint32_t frame)
         // starts from end node
         evaluate_recursive(graph, node, frame);
 
-        ImU32 color = IM_COL32(255, 20, 147, 255);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
-        ImGui::Begin(node.data->name().data());
-        ImGui::End();
-        ImGui::PopStyleColor();
+        // show gui
+        node.data->operate();
     }
 }
 
@@ -103,19 +124,32 @@ GraphType::Node& UiNode::CreateMultiply(GraphType& graph_)
 
 GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
 {
-    auto& node = graph_.insert_node(std::make_shared<UiNode>("output", []() {
-        // do nothing
+    // unique name for imgui
+    static int s_id = 0;
+    std::stringstream ss;
+    ss << "output###" << (s_id++);
+    auto name = ss.str();
+
+    auto r = std::make_shared<Pin>("r", 0.0f);
+    auto g = std::make_shared<Pin>("g", 0.0f);
+    auto b = std::make_shared<Pin>("b", 0.0f);
+    auto& node = graph_.insert_node(std::make_shared<UiNode>("output", [r, g, b, name]() {
+        ImU32 color = IM_COL32(r->value() * 255, g->value() * 255, b->value() * 255, 255);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
+        ImGui::Begin(name.data());
+        ImGui::End();
+        ImGui::PopStyleColor();
     }));
     // input only
-    node.add_input(std::make_shared<Pin>("r"));
-    node.add_input(std::make_shared<Pin>("g"));
-    node.add_input(std::make_shared<Pin>("b"));
+    node.add_input(r);
+    node.add_input(g);
+    node.add_input(b);
     return node;
 }
 
 GraphType::Node& UiNode::CreateSine(GraphType& graph_)
 {
-    auto theta = std::make_shared<Pin>("theta");
+    auto theta = std::make_shared<Pin>("theta", 0.0f);
     auto sine = std::make_shared<Pin>("sine");
     auto& node = graph_.insert_node(std::make_shared<UiNode>("sine", [theta, sine]() {
         auto value = theta->value();

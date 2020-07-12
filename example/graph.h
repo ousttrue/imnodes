@@ -214,17 +214,17 @@ public:
         edges_.erase(edge_id);
     }
 
-    Edge& edge_from_to(const InputAttribute& to)
+    Edge* get_edge(const InputAttribute& to)
     {
         for (auto& [id, edge] : edges_)
         {
             if (edge.to == to.id)
             {
-                return edge;
+                return &edge;
             }
         }
 
-        throw std::runtime_error("not found");
+        return nullptr;
     }
 };
 
