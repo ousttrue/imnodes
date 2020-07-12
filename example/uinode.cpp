@@ -24,7 +24,7 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
         {
             ImGui::SameLine();
             ImGui::PushItemWidth(node_width - label_width);
-            ImGui::DragFloat("##hidelabel", input.value->ptr(), 0.01f);
+            ImGui::DragFloat("##hidelabel", &input.value->value(), 0.01f);
             ImGui::PopItemWidth();
         }
         imnodes::EndInputAttribute();
@@ -59,18 +59,18 @@ void UiNode::evaluate(GraphType& graph, GraphType::Node& node)
 GraphType::Node& UiNode::CreateAdd(GraphType& graph_)
 {
     auto& node = graph_.insert_node(std::make_shared<UiNode>("add"));
-    node.add_input(std::make_shared<Input>("left"));
-    node.add_input(std::make_shared<Input>("right"));
-    node.add_output(std::make_shared<Output>("result"));
+    node.add_input(std::make_shared<Pin>("left"));
+    node.add_input(std::make_shared<Pin>("right"));
+    node.add_output(std::make_shared<Pin>("result"));
     return node;
 }
 
 GraphType::Node& UiNode::CreateMultiply(GraphType& graph_)
 {
     auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("multiply")));
-    node.add_input(std::make_shared<Input>("left"));
-    node.add_input(std::make_shared<Input>("right"));
-    node.add_output(std::make_shared<Output>("result"));
+    node.add_input(std::make_shared<Pin>("left"));
+    node.add_input(std::make_shared<Pin>("right"));
+    node.add_output(std::make_shared<Pin>("result"));
     return node;
 }
 
@@ -78,17 +78,17 @@ GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
 {
     auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("output")));
     // input only
-    node.add_input(std::make_shared<Input>("r"));
-    node.add_input(std::make_shared<Input>("g"));
-    node.add_input(std::make_shared<Input>("b"));
+    node.add_input(std::make_shared<Pin>("r"));
+    node.add_input(std::make_shared<Pin>("g"));
+    node.add_input(std::make_shared<Pin>("b"));
     return node;
 }
 
 GraphType::Node& UiNode::CreateSine(GraphType& graph_)
 {
     auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("sine")));
-    node.add_input(std::make_shared<Input>("theta"));
-    node.add_output(std::make_shared<Output>("value"));
+    node.add_input(std::make_shared<Pin>("theta"));
+    node.add_output(std::make_shared<Pin>("value"));
     return node;
 }
 
@@ -96,7 +96,7 @@ GraphType::Node& UiNode::CreateTime(GraphType& graph_)
 {
     auto& node = graph_.insert_node(std::shared_ptr<UiNode>(new UiNode("time")));
     // output only
-    node.add_output(std::make_shared<Output>("time"));
+    node.add_output(std::make_shared<Pin>("time"));
     return node;
 }
 

@@ -1,33 +1,25 @@
 #pragma once
 #include <memory>
 #include <string_view>
+#include <limits>
 #include "graph.h"
 
 namespace example
 {
 
-class Input
+class Pin
 {
     std::string m_name;
-    float m_value = 1.0f;
+    float m_value = std::numeric_limits<float>::quiet_NaN();
 
 public:
-    Input(const std::string& name) : m_name(name) {}
+    Pin(const std::string& name) : m_name(name) {}
     std::string_view name() const { return m_name; }
-    float* ptr() { return &m_value; }
+    float& value() { return m_value; }
+    void value(float n) { m_value = n; }
 };
-using InputPtr = std::shared_ptr<Input>;
-class Output
-{
-    std::string m_name;
-    float m_value = 1.0f;
-
-public:
-    Output(const std::string& name) : m_name(name) {}
-    std::string_view name() const { return m_name; }
-    float* ptr() { return &m_value; }
-};
-using OutputPtr = std::shared_ptr<Output>;
+using InputPtr = std::shared_ptr<Pin>;
+using OutputPtr = std::shared_ptr<Pin>;
 
 class UiNode;
 using UiNodePtr = std::shared_ptr<UiNode>;
@@ -46,10 +38,13 @@ public:
     std::string_view name() const { return m_name; }
 
     // draw imgui
-    void show(GraphType& graph, GraphType::Node &node) const;
+    void show(GraphType& graph, GraphType::Node& node) const;
 
     // calculate attribute values
-    void evaluate(GraphType& graph, GraphType::Node &node);
+    void evaluate(GraphType& graph, GraphType::Node& node);
+
+    // update node
+    void update();
 
     static GraphType::Node& CreateAdd(GraphType& graph);
     static GraphType::Node& CreateMultiply(GraphType& graph);
