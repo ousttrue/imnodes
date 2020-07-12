@@ -16,7 +16,7 @@ namespace example
 {
 
 // a very simple directional graph
-template<typename NodeValue, typename InputValue, typename OutputValue>
+template<typename NodeData, typename InputData, typename OutputData>
 class Graph
 {
     static inline int current_id_ = 0;
@@ -25,21 +25,21 @@ public:
     struct InputAttribute
     {
         int id;
-        InputValue value;
-        InputAttribute(int id, const InputValue& value) : id(id), value(value) {}
+        InputData data;
+        InputAttribute(int id, const InputData& data) : id(id), data(data) {}
     };
     struct OutputAttribute
     {
         int id;
-        OutputValue value;
-        OutputAttribute(int id, const OutputValue& value) : id(id), value(value) {}
+        OutputData data;
+        OutputAttribute(int id, const OutputData& data) : id(id), data(data) {}
     };
 
     struct Node
     {
         int id;
-        NodeValue value;
-        Node(int id, const NodeValue& value) : id(id), value(value) {}
+        NodeData data;
+        Node(int id, const NodeData& data) : id(id), data(data) {}
 
         std::vector<int> neighbors;
         std::vector<InputAttribute> inputs;
@@ -52,13 +52,13 @@ public:
             neighbors.erase(iter);
         }
 
-        void add_input(const InputValue& input)
+        void add_input(const InputData& input)
         {
             const int id = current_id_++;
             inputs.push_back(InputAttribute(id, input));
         }
 
-        void add_output(const OutputValue& output)
+        void add_output(const OutputData& output)
         {
             const int id = current_id_++;
             outputs.push_back(OutputAttribute(id, output));
@@ -127,7 +127,7 @@ public:
 
     // Modifiers
 
-    Node& insert_node(const NodeValue& value)
+    Node& insert_node(const NodeData& value)
     {
         const int id = current_id_++;
         auto inserted = nodes_.emplace(id, Node(id, value));

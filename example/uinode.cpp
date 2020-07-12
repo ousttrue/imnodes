@@ -19,12 +19,12 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
     for (auto& input : node.inputs)
     {
         imnodes::BeginInputAttribute(input.id);
-        const float label_width = ImGui::CalcTextSize(input.value->name().data()).x;
-        ImGui::TextUnformatted(input.value->name().data());
+        const float label_width = ImGui::CalcTextSize(input.data->name().data()).x;
+        ImGui::TextUnformatted(input.data->name().data());
         {
             ImGui::SameLine();
             ImGui::PushItemWidth(node_width - label_width);
-            ImGui::DragFloat("##hidelabel", &input.value->value(), 0.01f);
+            ImGui::DragFloat("##hidelabel", &input.data->value(), 0.01f);
             ImGui::PopItemWidth();
         }
         imnodes::EndInputAttribute();
@@ -35,9 +35,9 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
     for (auto& output : node.outputs)
     {
         imnodes::BeginOutputAttribute(output.id);
-        const float label_width = ImGui::CalcTextSize(output.value->name().data()).x;
+        const float label_width = ImGui::CalcTextSize(output.data->name().data()).x;
         ImGui::Indent(node_width - label_width);
-        ImGui::TextUnformatted(output.value->name().data());
+        ImGui::TextUnformatted(output.data->name().data());
         imnodes::EndOutputAttribute();
     }
 

@@ -43,7 +43,7 @@ public:
             ImU32 color = IM_COL32(255, 20, 147, 255);
             for (auto& [id, node] : graph_.nodes_)
             {
-                node.value->evaluate(graph_, node);
+                node.data->evaluate(graph_, node);
             }
         }
     }
@@ -54,7 +54,7 @@ public:
 
         for (auto& [id, node] : graph_.nodes_)
         {
-            node.value->show(graph_, node);
+            node.data->show(graph_, node);
         }
 
         for (const auto& [id, edge] : graph_.edges_)
