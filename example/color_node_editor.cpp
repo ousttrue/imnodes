@@ -55,7 +55,7 @@ public:
 
         for (const auto& [id, edge] : graph_.edges_)
         {
-            imnodes::Link(edge.id, edge.from, edge.to);
+            imnodes::Link(edge.id, edge.from.output.id, edge.to.input.id);
         }
 
         const bool open_popup = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&

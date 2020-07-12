@@ -63,7 +63,8 @@ void evaluate_recursive(GraphType& graph, GraphType::Node& dst, uint32_t frame)
             continue;
         }
 
-        auto& [src, from] = graph.edge_output(edge->from);
+        // auto& [src, from] = graph.edge_output(edge->from);
+        auto &[src, from] = edge->from;
 
         // update recursive
         evaluate_recursive(graph, src, frame);

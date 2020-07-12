@@ -41,16 +41,8 @@ public:
         NodeData data;
         Node(int id, const NodeData& data) : id(id), data(data) {}
 
-        std::vector<int> neighbors;
         std::vector<InputAttribute> inputs;
         std::vector<OutputAttribute> outputs;
-
-        void erase_edge(int to_node)
-        {
-            auto iter = std::find(neighbors.begin(), neighbors.end(), to_node);
-            assert(iter != neighbors.end());
-            neighbors.erase(iter);
-        }
 
         void add_input(const InputData& input)
         {
@@ -69,16 +61,30 @@ public:
     std::unordered_map<int, Node> nodes_;
 
 public:
+    struct NodeOutput
+    {
+        Node& node;
+        OutputAttribute& output;
+    };
+    struct NodeInput
+    {
+        Node& node;
+        InputAttribute& input;
+    };
+
     struct Edge
     {
         int id;
-        int from, to;
+        NodeOutput from;
+        NodeInput to;
 
-        Edge() = default;
-        Edge(const int id, const int f, const int t) : id(id), from(f), to(t) {}
+        Edge(const int id, const NodeOutput& output, const NodeInput& input)
+            : id(id), from(output), to(input)
+        {
+        }
 
         inline int opposite(const int n) const { return n == from ? to : from; }
-        inline bool contains(const int n) const { return n == from || n == to; }
+        inline bool contains(const int n) const { return n == from.node.id || n == to.node.id; }
     };
 
     // This container maps to the edge id
@@ -93,45 +99,33 @@ public:
         return iter->second;
     }
 
-    struct NodeOutput
+    NodeInput input_attribute(const int id)
     {
-        Node& node;
-        OutputAttribute& output;
-    };
-    NodeOutput edge_output(int id)
-    {
-        for (auto& [k, v] : nodes_)
+        for (auto& [_, node] : nodes_)
         {
-            for (auto& output : v.outputs)
-            {
-                if (output.id == id)
-                {
-                    return NodeOutput{v, output};
-                }
-            }
-        }
-
-        throw std::runtime_error("not found");
-    }
-
-    struct NodeInput
-    {
-        Node& node;
-        InputAttribute& input;
-    };
-    NodeInput edge_input(int id)
-    {
-        for (auto& [k, v] : nodes_)
-        {
-            for (auto& input : v.inputs)
+            for (auto& input : node.inputs)
             {
                 if (input.id == id)
                 {
-                    return NodeInput{v, input};
+                    return {node, input};
                 }
             }
         }
+        throw std::runtime_error("not found");
+    }
 
+    NodeOutput output_attribute(const int id)
+    {
+        for (auto& [_, node] : nodes_)
+        {
+            for (auto& output : node.outputs)
+            {
+                if (output.id == id)
+                {
+                    return {node, output};
+                }
+            }
+        }
         throw std::runtime_error("not found");
     }
 
@@ -173,6 +167,8 @@ public:
     ///
     /// create connection from attribute between to attribute
     ///
+    /// src.from(output) => dst.to(input)
+    ///
     /// check validation
     ///
     int insert_edge(const int from_idx, const int to_idx)
@@ -180,19 +176,15 @@ public:
         //
         // TODO: avoid loop
         //
-
         const int id = current_id_++;
         assert(edges_.find(id) == edges_.end());
+
+        auto output = output_attribute(from_idx);
+        auto input = input_attribute(to_idx);
+
         // assert(nodes_.find(from) != nodes_.end());
         // assert(nodes_.find(to) != nodes_.end());
-        edges_.insert(std::make_pair(id, Edge(id, from_idx, to_idx)));
-
-        // update neighbor list
-        auto& [src, from] = edge_output(from_idx);
-        auto& [dst, to] = edge_input(to_idx);
-
-        // assert(nodes_.find(from) != nodes_.end());
-        src.neighbors.push_back(dst.id);
+        edges_.insert(std::make_pair(id, Edge(id, output, input)));
 
         return id;
     }
@@ -203,14 +195,6 @@ public:
         // based on id key.
         assert(edges_.find(edge_id) != edges_.end());
         const Edge& edge = edges_.find(edge_id)->second;
-
-        // update neighbor list
-        {
-            assert(nodes_.find(edge.from) != nodes_.end());
-            auto& node = nodes_.find(edge.from)->second;
-            node.erase_edge(edge.to);
-        }
-
         edges_.erase(edge_id);
     }
 
@@ -218,7 +202,7 @@ public:
     {
         for (auto& [id, edge] : edges_)
         {
-            if (edge.to == to.id)
+            if (edge.to.input.id == to.id)
             {
                 return &edge;
             }
