@@ -42,6 +42,9 @@ class UiNode
 
     uint32_t m_lastFrame = -1;
 
+    std::function<void()> m_begin;
+    std::function<void()> m_end;
+
 public:
     UiNode(const std::string& name, const Operation& operation)
         : m_name(name), m_operation(operation)

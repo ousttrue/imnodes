@@ -9,6 +9,11 @@ namespace example
 
 void UiNode::show(GraphType& graph, GraphType::Node& node) const
 {
+    if (node.data->m_begin)
+    {
+        node.data->m_begin();
+    }
+
     const float node_width = 100.f;
     imnodes::BeginNode(node.id);
 
@@ -44,6 +49,11 @@ void UiNode::show(GraphType& graph, GraphType::Node& node) const
     }
 
     imnodes::EndNode();
+
+    if (node.data->m_end)
+    {
+        node.data->m_end();
+    }
 }
 
 void evaluate_recursive(GraphType& graph, GraphType::Node& dst, uint32_t frame)
@@ -64,7 +74,7 @@ void evaluate_recursive(GraphType& graph, GraphType::Node& dst, uint32_t frame)
         }
 
         // auto& [src, from] = graph.edge_output(edge->from);
-        auto &[src, from] = edge->from;
+        auto& [src, from] = edge->from;
 
         // update recursive
         evaluate_recursive(graph, src, frame);
@@ -145,6 +155,18 @@ GraphType::Node& UiNode::CreateOutput(GraphType& graph_)
     node.add_input(r);
     node.add_input(g);
     node.add_input(b);
+
+    node.data->m_begin = []() {
+        imnodes::PushColorStyle(imnodes::ColorStyle_TitleBar, IM_COL32(11, 109, 191, 255));
+        imnodes::PushColorStyle(imnodes::ColorStyle_TitleBarHovered, IM_COL32(45, 126, 194, 255));
+        imnodes::PushColorStyle(imnodes::ColorStyle_TitleBarSelected, IM_COL32(81, 148, 204, 255));
+    };
+    node.data->m_end = []() {
+        imnodes::PopColorStyle();
+        imnodes::PopColorStyle();
+        imnodes::PopColorStyle();
+    };
+
     return node;
 }
 
