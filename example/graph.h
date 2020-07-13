@@ -173,6 +173,19 @@ public:
     ///
     int insert_edge(const int from_idx, const int to_idx)
     {
+        for (auto it = edges_.begin(); it != edges_.end();)
+        {
+            if (it->second.to.input.id == to_idx)
+            {
+                // remove edge if to is same
+                it = edges_.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
         //
         // TODO: avoid loop
         //
